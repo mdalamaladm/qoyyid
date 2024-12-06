@@ -1,0 +1,25 @@
+Body := BodyChild*
+
+BodyChild := Paragraph | UnorderedList | NEWLINE
+
+Paragraph := SentenceAndNewline | SentenceAndEOF
+
+UnorderedList := ListsAndNewLine | ListsAndEOF
+                    
+SentenceAndNewline := Sentence+ NEWLINE NEWLINE
+SentencesAndEOF := Sentence+ NEWLINE EOF | Sentence+ EOF
+                    
+ListsAndNewLine := Lists NEWLINE NEWLINE
+ListsAndEOF := Lists NEWLINE EOF | Lists EOF
+
+Lists := (List NEWLINE)* List
+
+List := DASHSPACE Sentence+
+
+Sentence := ItalicText | BoldText | Text
+
+ItalicText := UNDERSCORE UNDERSCORE Text UNDERSCORE UNDERSCORE
+
+BoldText := STAR STAR Text STAR STAR
+
+Text := WORD | SPACE | TAB

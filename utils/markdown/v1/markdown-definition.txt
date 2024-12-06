@@ -1,0 +1,15 @@
+Markdown definitions:
+
+# Text = <h1>Text</h1>
+## Text = <h2>Text</h2>
+### Text = <h3>Text</h3>
+#### Text = <h4>Text</h4>
+##### Text = <h5>Text</h5>
+###### Text = <h6>Text</h6>
+**Text** = <b>Teks</b>
+__Text__ = <i>Teks</i>
+
+1. A \n2. B \n3. C\n = <ol><li>A</li><li>B</li><li>C</li></ol>
+
+- A\n- B\n- C\n = <ul><li>A</li><li>B</li><li>C</li></ul>
+
