@@ -20,9 +20,6 @@ function finalFormat (arr) {
 }
 
 function diffV1 (oldArrParam, currentArrParam) {
-  // alert("OLD PARAM " + p(oldArrParam))
-  // alert("CURRENT PARAM " + p(currentArrParam))
-  
   let res = []
   
   let oldArr = copy(oldArrParam)
@@ -48,12 +45,7 @@ function diffV1 (oldArrParam, currentArrParam) {
   
   oldArr = copy([...new Array(currentLength - 1).fill('~'), ...copy(oldArr)])
   
-  // alert("WITH ~: " + p(oldArr))
-  
   for (let round = 0; round < totalLength; round++) {
-    // console.log(oldArr)
-    // console.log(currentArr)
-
     let diffArr = []
   
     for (let idx = 0; idx < totalLength + longestLength - 1; idx++) {
@@ -73,15 +65,35 @@ function diffV1 (oldArrParam, currentArrParam) {
         diffArr[idx] = { idx, old, current, action, meta }
     }
     
-   // console.log(diffArr)
-    // console.log('======')
+    const noneObj = {
+      noneLength: 0,
+      noneIndex: Infinity,
+    }
+    
+    let current = 0
+    let i = diffArr.length
+    for (; i > -1; i--) {
+      const action = diffArr[i]?.action
+      const nextAction = diffArr[i - 1]?.action
+      
+      if (action === 'NONE') {
+        current++
+        if (nextAction !== 'NONE') {
+          if (current > noneObj.noneLength) {
+            noneObj.noneLength = current
+            noneObj.noneIndex = i
+          }
+          
+          current = 0
+        }
+      }
+    }
     
     const payload = {
       oldArr: copy(oldArr),
       currentArr: copy(currentArr),
       diffArr,
-      noneLength: diffArr.filter(d => d.action === 'NONE').length,
-      firstNoneIdx: diffArr.find(d => d.action === 'NONE')?.idx || Infinity
+      ...noneObj,
     }
     
     res.push(payload)
@@ -89,16 +101,17 @@ function diffV1 (oldArrParam, currentArrParam) {
     currentArr.unshift('~')
   }
   
-  
   if (!res.find(r => !!r.noneLength)) return finalFormat(res[currentLength - 1].diffArr)
   
   const selectedRes = res.reduce((selected, current) => {
-    if (
-      //!!current.noneLength &&
-      current.noneLength > selected.noneLength
-      && current.firstNoneIdx < selected.firstNoneIdx
-      ) return current
-    else return selected
+    if (current.noneIndex < selected.noneIndex) return current
+    else if (current.noneIndex === selected.noneIndex) {
+      if (current.noneLength > selected.noneLength) return current
+      else return selected
+    } else return selected
+  }, {
+    noneLength: 0,
+    noneIndex: Infinity
   })
 
   let finalRes = []
@@ -108,15 +121,8 @@ function diffV1 (oldArrParam, currentArrParam) {
     finalRes.push(selectedRes.diffArr[index])
     latestIdx = +index + 1
     
-    if (selectedRes.diffArr[index].action === 'NONE' && selectedRes.diffArr[latestIdx].action !== 'NONE') break
+    if (selectedRes.diffArr[index].action === 'NONE' && selectedRes.diffArr[latestIdx]?.action !== 'NONE') break
   }
-  
-  // console.log('LATEST INDEX', latestIdx)
-  // console.log('SELECTED OLD ARR', selectedRes.oldArr)
-  // console.log('SELECTED CURR ARR', selectedRes.currentArr)
-  
-  // console.log('*******')
-  // alert("FINAL RES " + p(finalRes))
   
   finalRes = finalFormat(finalRes)
   

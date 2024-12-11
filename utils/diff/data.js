@@ -1,4 +1,5 @@
-module.exports = [
+module.exports =
+[
   {
     name: '1 DELETE',
     old: 'One Two Three Four',
@@ -261,5 +262,11 @@ module.exports = [
     old: 'Keep working Keep the spirit Keep smile',
     current: 'Keep working Keep the spirit Keep smile',
     expected: 'Keep working Keep the spirit Keep smile'
-  }
+  },
+  {
+    name: 'MULTIPLE SAME NAME INSERT MIDDLE',
+    old: 'Keep working Keep spirit Keep smiling every people Don\'t panic',
+    current: 'Keep working hard Keep spirit Keep smiling every people Don\'t panic',
+    expected: 'Keep working (hard) Keep spirit Keep smiling every people Don\'t panic'
+  },
 ]
