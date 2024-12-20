@@ -27,15 +27,43 @@ type DetailNotesParams = {
   noteId: string;
 }
 
-const renderMarkdown = {
-  body: (children) => <>{children}</>,
-  paragraph: (children) => <p>{children}</p>,
-  unorderedList: (children) => <ul>{children}</ul>,
-  newLine: (children) => <br/>,
-  list: (children) => <li>{children}</li>,
-  bold: (children) => <b>{children}</b>,
-  italic: (children) => <i>{children}</i>,
-  text: (children, isWord) => <span className="word">{children}</span>,
+const renderMarkdown = (gtr) => {
+  return {
+    body: (children) => <>{children}</>,
+    paragraph: (children) => <p>{children}</p>,
+    unorderedList: (children) => <ul>{children}</ul>,
+    newLine: (children) => <br/>,
+    list: (children) => <li>{children}</li>,
+    bold: (children) => <b>{children}</b>,
+    italic: (children) => <i>{children}</i>,
+    text: (children, isWord) => {
+      if (!isWord) return <span>{children}</span>
+      
+      let value = gtr?.next().value
+      let old = value?.old?.text || value?.old
+      let current = value?.current?.text || value?.current
+      let action = value?.action
+      
+      const texts = []
+
+      if (action === 'DELETE') {
+        while (action === 'DELETE') {
+          texts.push(<><span className="bg-red-500 text-white">{old}</span><span>&nbsp;</span></>)
+          
+          value = gtr?.next().value
+          old = value?.old?.text || value?.old
+          current = value?.current?.text || value?.current
+          action = value?.action
+        }
+      }
+      
+      if (action === 'INSERT') texts.push(<span className="bg-green-500 text-white">{current}</span>)
+      else if (action === 'ALTER') texts.push(<span><span className="bg-red-500 text-white">{old}</span><span className="bg-green-500 text-white">{current}</span></span>)
+      else texts.push(<span>{current || children}</span>)
+      
+      return <span>{texts}</span>
+    },
+  }
 }
 
 const PreviewButton = ({ state, setState, onClickPreview }) => (
@@ -100,62 +128,45 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   const { getNote, editNote, getSubnote, addSubnote, editSubnote, getSubnoteOrder } = useApi()
   const { formValue, initForm } = useForm()
   
-  const backToNotes = () => router.push('/notes')
-  
-  const onSaveNote = async (payload: FormValue) => {
-    const id = params.noteId
-    
-    const oldWords = words.map(c => ({ text: c.text, meta: { id: c.id } }))
-
-    // payload.words = diff(oldWords, payload.words.trim().split(/\s{1,}|\t/g))
-  
-    const { err, errParams } = await editNote(id, payload)
-    
-    if (err) {
-      snackbar.error(locale(err, errParams))
-      
-      if (err === 'Please login again') router.push('/login')
+  const getWords = (content) => {
+    const extractWord = (tc, res) => {
+      if (tc.type === 'TEXT') {
+        if (tc.isWord) return res.push(tc.value)
+        else return res.push('IGNORE')
+      } else {
+        tc.value?.forEach(tcv => extractWord(tcv, res))
+      }
     }
+      
+    const mapWords = (token) => {
+      let res = []
+  
+      if (token.type === 'PARAGRAPH') {
+        token.children.forEach(tc => {
+          extractWord(tc, res)
+        })
+      } else if (token.type === 'UNORDERED_LIST') {
+        token.children.forEach(tc => {
+          tc.sentences.forEach(tcs => {
+            extractWord(tcs, res)
+          })
+        })
+      }
+      
+      return res.filter(r => r !== 'IGNORE')
+    }
+  
+    const token = Markdown.parse(content)
     
-    snackbar.success(locale('$1 is saved', ['Notes']))
-    
-    setState('read')
-    
-    loadNote()
+    return token.children.reduce((result, current, index) => {
+      //if (index !== 0) result.push('[[BREAK]]')
+      
+      return [...result, ...mapWords(current, index)]
+      
+      return result
+    }, [])
   }
 
-  const onSaveSubnote = async (payload: FormValue) => {
-    const noteId = params.noteId
-    const wordId = params.noteId + '|' + [...selected].sort((a, b) => a?.sequence! - b?.sequence!).map(s => s.sequence).join('')
-    
-    let err = null
-    let errParams = []
-    
-    if (!subnote) {
-      const res = await addSubnote(noteId, wordId, payload as { text: string })
-      
-      err = res.err
-      errParams = res.errParams
-    } else {
-      const res = await editSubnote(noteId, wordId, payload as { text: string })
-      
-      err = res.err
-      errParams = res.errParams
-    }
-    
-    if (err) {
-      snackbar.error(locale(err, errParams))
-      
-      if (err === 'Please login again') router.push('/login')
-    }
-    
-    snackbar.success(locale('$1 is saved', ['Subnotes']))
-    
-    setSubnoteState('read')
-    
-    loadSubnote()
-  }
-  
   const loadNote = async () => {
     const noteId = params.noteId
     
@@ -174,7 +185,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     setTitle(data.note?.title)
     setContent(data.note?.content)
     setOldContent(data.note?.content)
-    setContentRendered(Markdown.generate(data.note?.content, renderMarkdown))
+    setContentRendered(Markdown.generate(data.note?.content, renderMarkdown()))
     setWords(data.words)
     setOrders(orders)
   
@@ -227,6 +238,84 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
         text: [],
       }
     })
+  }
+
+  const backToNotes = () => router.push('/notes')
+  
+  const onSaveNote = async (payload: FormValue) => {
+    const id = params.noteId
+    
+    const oldWords = words.map(c => ({ value: c.text, meta: { id: c.id } }))
+    
+    const currentWords = getWords(payload.content)
+
+    payload.words = diff(oldWords, currentWords)
+  
+    const { err, errParams } = await editNote(id, payload)
+    
+    if (err) {
+      snackbar.error(locale(err, errParams))
+      
+      if (err === 'Please login again') router.push('/login')
+    }
+    
+    snackbar.success(locale('$1 is saved', ['Notes']))
+    
+    setState('read')
+    
+    loadNote()
+  }
+  
+  const onClickPreview = () => {
+    function* diffGenerator (diffRes): Generator<object> {
+      for (const d of diffRes) yield d
+    }
+    
+    const oldWords = words.map(w => ({ value: w.text, meta: { id: w.id, sequence: w.sequence } }))
+    
+    const currentWords = getWords(formValue.content)
+
+    const diffRes = diff(oldWords, currentWords)
+    
+    const diffGtr = diffGenerator(diffRes)
+    
+    const preview = Markdown.generate(formValue.content, renderMarkdown(diffGtr))
+
+    setPreview(preview)
+    
+    setState('preview')
+  }
+
+  const onSaveSubnote = async (payload: FormValue) => {
+    const noteId = params.noteId
+    const wordId = params.noteId + '|' + [...selected].sort((a, b) => a?.sequence! - b?.sequence!).map(s => s.sequence).join('')
+    
+    let err = null
+    let errParams = []
+    
+    if (!subnote) {
+      const res = await addSubnote(noteId, wordId, payload as { text: string })
+      
+      err = res.err
+      errParams = res.errParams
+    } else {
+      const res = await editSubnote(noteId, wordId, payload as { text: string })
+      
+      err = res.err
+      errParams = res.errParams
+    }
+    
+    if (err) {
+      snackbar.error(locale(err, errParams))
+      
+      if (err === 'Please login again') router.push('/login')
+    }
+    
+    snackbar.success(locale('$1 is saved', ['Subnotes']))
+    
+    setSubnoteState('read')
+    
+    loadSubnote()
   }
   
   const onChangeSubnotePage = (direction) => {
@@ -300,73 +389,6 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     
     loadNote()
   }
-  const [test, setTest] = React.useState<string>('')
-  const onClickPreview = () => {
-    const preview = Markdown.generate(formValue.content, renderMarkdown)
-    setPreview(preview)
-    
-    function extractWord (tc, res) {
-      if (tc.type === 'TEXT') {
-        if (tc.isWord) return res.push(tc.value)
-        else return res.push('IGNORE')
-      } else {
-        tc.value?.forEach(tcv => extractWord(tcv, res))
-      }
-    }
-    
-    function mapWords (t, index, isOld) {
-      let res = []
-
-      if (t.type === 'PARAGRAPH') {
-        t.children.forEach(tc => {
-          extractWord(tc, res)
-        })
-      } else if (t.type === 'UNORDERED_LIST') {
-        t.children.forEach(tc => {
-          tc.sentences.forEach(tcs => {
-            extractWord(tcs, res)
-          })
-        })
-      }
-      
-      res = res.filter(r => r !== 'IGNORE')
-      
-      return { value: t.type,
-      meta: { [isOld ? 'oldWords' : 'words']: res  }
-        
-      }
-    }
-    
-    const token = Markdown.parse(formValue.content)
-    const tokenParent = token.children.map((t, index) => mapWords(t, index, false))
-
-    const oldToken = Markdown.parse(oldContent)
-    const oldTokenParent = oldToken?.children.map((t, index) => mapWords(t, index, true)) || []
-    
-    alert('DIFF PARENT')
-    const diffParent = diff(oldTokenParent, tokenParent)
-    
-    // alert(JSON.stringify(diffParent
-    // //.map(d => ({ action: d.action }))
-    // ))
-    
-    diffParent.forEach((d) => {
-      if (d.action === 'NONE') {
-        alert(JSON.stringify(d.meta.oldWords.join(' ')))
-        alert(JSON.stringify(d.meta.words.join(' ')))
-        const resDiff = diff(d.meta.oldWords, d.meta.words)
-        
-        // alert(JSON.stringify(d.meta.oldWords))
-        // alert(JSON.stringify(d.meta.words))
-        // alert(JSON.stringify(d.meta.words) === JSON.stringify(d.meta.oldWords))
-        alert(JSON.stringify(resDiff))
-        alert('≈=======')
-      }
-    })
-    
-    
-    setState('preview')
-  }
   
   React.useEffect(() => {
     if (isNew) setState('write')
@@ -398,7 +420,6 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
         <UButton type="link" color="accent" icon="chevronLeft-40" onClick={() => backToNotes()} />
         <NoteButton state={state} setState={setState} selected={selected} onClickPreview={onClickPreview} />
       </div>
-      <p>{JSON.stringify(test)}</p>
       <NoteContent
         state={state}
         title={title}
