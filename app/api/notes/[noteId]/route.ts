@@ -63,8 +63,6 @@ export async function PUT(
     
     for (const index in words) {
       const word = words[index]
-      
-      console.log(word)
     
       if (word.action === 'INSERT') {
         const wordId = uuidV4()
