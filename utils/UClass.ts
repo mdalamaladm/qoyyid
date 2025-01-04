@@ -34,6 +34,7 @@ export default class UClass {
       'solid-main': 'bg-qoyyid-main active:bg-qoyyid-light-gray disabled:bg-qoyyid-gray text-qoyyid-accent disabled:text-qoyyid-gray',
       'solid-secondary': 'bg-qoyyid-secondary active:bg-qoyyid-light-gray disabled:bg-qoyyid-gray text-qoyyid-accent disabled:text-qoyyid-gray',
       'solid-accent': 'bg-qoyyid-accent active:bg-qoyyid-dark-accent disabled:bg-qoyyid-gray text-qoyyid-main',
+      'solidinv-accent': 'bg-qoyyid-gray active:bg-qoyyid-dark-accent disabled:bg-qoyyid-accent text-qoyyid-main',
       'outlined-main': 'border-qoyyid-main active:border-qoyyid-light-gray disabled:border-qoyyid-gray text-qoyyid-main active:text-qoyyid-light-gray disabled:text-qoyyid-gray',
       'outlined-secondary': 'border-qoyyid-secondary active:border-qoyyid-light-gray disabled:border-qoyyid-gray text-qoyyid-secondary active:text-qoyyid-light-gray disabled:text-qoyyid-gray',
       'outlined-accent': 'border-qoyyid-accent active:border-qoyyid-dark-accent disabled:border-qoyyid-gray text-qoyyid-accent active:text-qoyyid-dark-accent disabled:text-qoyyid-gray',
