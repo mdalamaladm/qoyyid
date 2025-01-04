@@ -57,14 +57,14 @@ const ApiProvider = ({ children }: { children: React.ReactNode }) => {
     method: 'DELETE'
   })
   
-  const getSubnote = async (noteId: string, contentId: string) => await fetchJSON(`/api/notes/${noteId}/subnotes/${contentId}`)
+  const getSubnote = async (noteId: string, wordIds: string[]) => await fetchJSON(`/api/notes/${noteId}/subnotes?${new URLSearchParams({ wordIds: wordIds.join(',') })}`)
   
-  const addSubnote = async (noteId: string, contentId: string, payload: { text: string }) => await fetchJSON(`/api/notes/${noteId}/subnotes/${contentId}`, {
+  const addSubnote = async (noteId: string, payload: { text: string, wordIds: string[] }) => await fetchJSON(`/api/notes/${noteId}/subnotes`, {
     method: 'POST',
     body: JSON.stringify(payload)
   })
   
-  const editSubnote = async (noteId: string, contentId: string, payload: { text: string }) => await fetchJSON(`/api/notes/${noteId}/subnotes/${contentId}`, {
+  const editSubnote = async (noteId: string, payload: { text: string, wordIds: string[] }) => await fetchJSON(`/api/notes/${noteId}/subnotes`, {
     method: 'PUT',
     body: JSON.stringify(payload)
   })
