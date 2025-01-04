@@ -18,65 +18,27 @@ import { Word } from '@/@types/word.d'
 
 import diff from '@/utils/diff'
 import Markdown from '@/utils/markdown/v1'
+import objToClassName from '@/utils/objToClassName'
 
 let dblClickTimer = null
 let dblClick: { id?: string, time?: number } = {}
-
 
 type DetailNotesParams = {
   noteId: string;
 }
 
-const renderMarkdown = (gtr) => {
-  return {
-    body: (children) => <>{children}</>,
-    paragraph: (children) => <p>{children}</p>,
-    unorderedList: (children) => <ul>{children}</ul>,
-    newLine: (children) => <br/>,
-    list: (children) => <li>{children}</li>,
-    bold: (children) => <b>{children}</b>,
-    italic: (children) => <i>{children}</i>,
-    text: (children, isWord) => {
-      if (!isWord) return <span>{children}</span>
-      
-      let value = gtr?.next().value
-      let old = value?.old?.text || value?.old
-      let current = value?.current?.text || value?.current
-      let action = value?.action
-      
-      const texts = []
-
-      if (action === 'DELETE') {
-        while (action === 'DELETE') {
-          texts.push(<><span className="bg-red-500 text-white">{old}</span><span>&nbsp;</span></>)
-          
-          value = gtr?.next().value
-          old = value?.old?.text || value?.old
-          current = value?.current?.text || value?.current
-          action = value?.action
-        }
-      }
-      
-      if (action === 'INSERT') texts.push(<span className="bg-green-500 text-white">{current}</span>)
-      else if (action === 'ALTER') texts.push(<span><span className="bg-red-500 text-white">{old}</span><span className="bg-green-500 text-white">{current}</span></span>)
-      else texts.push(<span>{current || children}</span>)
-      
-      return <span>{texts}</span>
-    },
-  }
-}
-
-const PreviewButton = ({ state, setState, onClickPreview }) => (
+const PreviewButton = ({ state, setState, onClickPreview, onClickChanges }) => (
   <div class="flex mr-3">
-    <UButton type="solid" color="accent" style="rounded-r-none" disabled={state !== 'preview'} onClick={() => setState('write')}>Text</UButton>
-    <UButton type="solid" color="accent" style="rounded-l-none" disabled={state === 'preview'} onClick={onClickPreview}>Preview</UButton>
+    <UButton type="solidinv" color="accent" icon="edit" style="rounded-r-none" disabled={state !== 'preview' && state !== 'changes'} onClick={() => setState('write')} />
+    <UButton type="solidinv" color="accent" icon="preview" style="rounded-none" disabled={state === 'preview'} onClick={onClickPreview} />
+    <UButton type="solidinv" color="accent" icon="difference" style="rounded-l-none" disabled={state === 'changes'} onClick={onClickChanges} />
   </div>
 )
 
-const NoteButton = ({ state, setState, selected, onClickPreview }) => {
-  if (state === 'write' || state === 'preview') return (
+const NoteButton = ({ state, setState, selected, onClickPreview, onClickChanges }) => {
+  if (state === 'write' || state === 'preview' || state === 'changes') return (
     <div className="flex">
-      <PreviewButton state={state} setState={setState} onClickPreview={onClickPreview} />
+      <PreviewButton state={state} setState={setState} onClickPreview={onClickPreview} onClickChanges={onClickChanges} />
       <UButton key="save-note" type="link" color="accent" icon="save" submit="note-form" />
     </div>
   )
@@ -85,10 +47,14 @@ const NoteButton = ({ state, setState, selected, onClickPreview }) => {
     )
   }
 
-const NoteContent = ({ state, title, preview, noteWriteModeProps, noteReadModeProps }) => {
+const NoteContent = ({ state, title, preview, changes, noteWriteModeProps, noteReadModeProps }) => {
   if (state === 'preview') return <div>
     <h1 className="px-2 pt-2 mb-[2.65rem] text-3xl text-center break-words select-none">{title}</h1>
-    <div className="markdown px-1.5">{preview}</div>
+    <div className="markdown px-1.5 mx-3">{preview}</div>
+  </div>
+  else if (state === 'changes') return <div>
+    <h1 className="px-2 pt-2 mb-[2.65rem] text-3xl text-center break-words select-none">{title}</h1>
+    <div className="markdown px-1.5 mx-3">{changes}</div>
   </div>
   else if (state === 'write') return (
      <NoteWriteMode
@@ -112,16 +78,19 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   const [content, setContent] = React.useState<string>('')
   const [oldContent, setOldContent] = React.useState<string>('')
   const [contentRendered, setContentRendered] = React.useState<object>(<></>)
+  const [contentAst, setContentAst] = React.useState<object>(null)
   const [words, setWords] = React.useState<Word[]>([])
   const [selected, setSelected] = React.useState<Content[]>([])
   const [multitextMode, setMultitextMode] = React.useState<boolean>(false)
   const [subnoteState, setSubnoteState] = React.useState<'read' | 'write'>('read')
   const [subnote, setSubnote] = React.useState<string>('')
+  const [subnoteId, setSubnoteId] = React.useState<string>('')
   const [orders, setOrders] = React.useState<Word[]>([])
   const [subnotePage, setSubnotePage] = React.useState<number | null>(null)
-  const [currentWordId, setCurrentWordId] = React.useState<string>('')
+  const [currentWordIds, setCurrentWordIds] = React.useState<string[]>([])
   const [currentText, setCurrentText] = React.useState<string>('')
   const [preview, setPreview] = React.useState<string>('')
+  const [changes, setChanges] = React.useState<string>('')
 
   const { locale } = useLocale()
   const { snackbar } = useSnackbar()
@@ -158,13 +127,13 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   
     const token = Markdown.parse(content)
     
-    return token.children.reduce((result, current, index) => {
-      //if (index !== 0) result.push('[[BREAK]]')
+    return token?.children.reduce((result, current, index) => {
+      if (index !== 0) result.push('[[BREAK]]')
       
       return [...result, ...mapWords(current, index)]
       
       return result
-    }, [])
+    }, []) || []
   }
 
   const loadNote = async () => {
@@ -172,12 +141,12 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     
     const { data, err, errParams } = await getNote(noteId)
     
-    const { data: orders, err: errOrder, errParams: errOrderParams } = await getSubnoteOrder(noteId)
+    // const { data: orders, err: errOrder, errParams: errOrderParams } = await getSubnoteOrder(noteId)
     
-    if (err || errOrder) {
-      snackbar.error(locale(err || errOrder, errParams || errOrderParams))
+    if (err) {
+      snackbar.error(locale(err, errParams))
       
-      if ((err || errOrder ) === 'Please login again') router.push('/login')
+      if ((err) === 'Please login again') router.push('/login')
     }
     
     if (!data) return
@@ -185,9 +154,8 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     setTitle(data.note?.title)
     setContent(data.note?.content)
     setOldContent(data.note?.content)
-    setContentRendered(Markdown.generate(data.note?.content, renderMarkdown()))
     setWords(data.words)
-    setOrders(orders)
+    // setOrders(orders)
   
     initForm({
       value: {
@@ -203,9 +171,9 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   
   const loadSubnote = async () => {
     const noteId = params.noteId
-    const wordId = currentWordId
+    const wordIds = currentWordIds
       
-    const { data, err, errParams } = await getSubnote(noteId, wordId)
+    const { data, err, errParams } = await getSubnote(noteId, wordIds)
     
     if (err) {
       snackbar.error(locale(err, errParams))
@@ -215,6 +183,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     
     if (!data) {
       setSubnote('')
+      setSubnoteId('')
       
       initForm({
         value: {
@@ -229,6 +198,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     }
     
     setSubnote(data.text)
+    setSubnoteId(data.id)
     
     initForm({
       value: {
@@ -267,8 +237,24 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   }
   
   const onClickPreview = () => {
+    const preview = Markdown.generate({
+      markdown: formValue.content,
+      render: renderMarkdown()
+    })
+
+    setPreview(preview)
+    
+    setState('preview')
+  }
+  
+  const onClickChanges = () => {
     function* diffGenerator (diffRes): Generator<object> {
-      for (const d of diffRes) yield d
+      for (const d of diffRes) {
+        const current = d.current?.text || d.current
+        const old = d.old?.text || d.old
+        
+        if (current !== '[[BREAK]]' && old !== '[[BREAK]]') yield d
+      }
     }
     
     const oldWords = words.map(w => ({ value: w.text, meta: { id: w.id, sequence: w.sequence } }))
@@ -279,27 +265,32 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     
     const diffGtr = diffGenerator(diffRes)
     
-    const preview = Markdown.generate(formValue.content, renderMarkdown(diffGtr))
+    const changes = Markdown.generate({
+      markdown: formValue.content,
+      render: renderMarkdown({ diffGtr })
+    })
 
-    setPreview(preview)
+    setChanges(changes)
     
-    setState('preview')
+    setState('changes')
   }
 
   const onSaveSubnote = async (payload: FormValue) => {
     const noteId = params.noteId
-    const wordId = params.noteId + '|' + [...selected].sort((a, b) => a?.sequence! - b?.sequence!).map(s => s.sequence).join('')
+    const wordIds = [...selected].map(w => w.id)
     
     let err = null
     let errParams = []
     
+    payload = { ...payload, textId: subnoteId, wordIds }
+    
     if (!subnote) {
-      const res = await addSubnote(noteId, wordId, payload as { text: string })
+      const res = await addSubnote(noteId, payload as { text: string, textId: string, wordIds: string[] })
       
       err = res.err
       errParams = res.errParams
     } else {
-      const res = await editSubnote(noteId, wordId, payload as { text: string })
+      const res = await editSubnote(noteId, payload as { text: string, textId: string, wordIds: string[] })
       
       err = res.err
       errParams = res.errParams
@@ -328,7 +319,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     
     const currentSelected = orders[current]
     
-    setCurrentWordId(currentSelected.word_id)
+    setCurrentWordIds(currentSelected.word_id)
     
     const currentSelectedArr = currentSelected.word_id.split('|').map((ci) => {
       const current = words.find((c) => c.id === ci)
@@ -354,19 +345,20 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   
     if (isDoubleClick) {
       if (multitextMode) {
-        setSelected([{ id, text, sequence }])
         setMultitextMode(false)
       } else {
         clearTimeout(dblClickTimer)
         setMultitextMode(true)
       }
+
+      setSelected([{ id, text, sequence }])
       
       return
     }
     
     if (multitextMode || isDoubleClick) {
       const alreadySelected = selected.find(s => s.id === id)
-
+  
       if (alreadySelected && selected.length > 1) {
         if (multitextMode) {
           const filtered = selected.filter((s: Word) => s.id !== id)
@@ -395,35 +387,120 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   }, [])
   
   React.useEffect(() => {
-    loadNote()
-  }, [])
-  
-  React.useEffect(() => {
-    loadSubnote()
-  }, [currentWordId])
-  
-  React.useEffect(() => {
-    const wordId = params.noteId + '|' + [...selected].sort((a, b) => a?.sequence! - b?.sequence!).map(s => s.sequence).join('')
+    const wordIds = [...selected].map(s => s.id)
 
-    setCurrentWordId(wordId)
+    setCurrentWordIds(wordIds)
     
-    const currentPage = orders.findIndex(o => o.word_id === wordId)
+    // const currentPage = orders.findIndex(o => o.word_id === wordId)
     const currentText = selected.map(s => s.text).join(' ')
     
-    setSubnotePage(currentPage)
+    // setSubnotePage(currentPage)
     setCurrentText(currentText)
   }, [selected])
   
+  React.useEffect(() => {
+    if (currentWordIds.length > 0) loadSubnote()
+    
+    function* readGenerator (): Generator<object> {
+      for (const word of words) yield word
+    }
+    
+    const readGtr = readGenerator()
+    
+    setContentRendered(Markdown.generate({ ast: contentAst,
+      render: renderMarkdown({ readGtr })
+    }))
+  }, [currentWordIds])
+  
+  
+  const renderMarkdown = ({ diffGtr, readGtr } = {}) => {
+    return {
+      body: (children) => <>{children}</>,
+      paragraph: (children) => <p>{children}</p>,
+      unorderedList: (children) => <ul>{children}</ul>,
+      newLine: (children) => <br/>,
+      list: (children) => <li>{children}</li>,
+      bold: (children) => <b>{children}</b>,
+      italic: (children) => <i>{children}</i>,
+      text: (children, isWord) => {
+        if (!isWord) return <span>{children}</span>
+    
+        let texts = []
+        
+        if (diffGtr) {
+          let value = diffGtr?.next().value
+          let old = value?.old?.text || value?.old
+          let current = value?.current?.text || value?.current
+          let action = value?.action
+          
+    
+          if (action === 'DELETE') {
+            while (action === 'DELETE') {
+              texts.push(<><span className="bg-red-500 text-white">{old}</span><span>&nbsp;</span></>)
+              
+              value = gtr?.next().value
+              old = value?.old?.text || value?.old
+              current = value?.current?.text || value?.current
+              action = value?.action
+            }
+          }
+          
+          if (action === 'INSERT') texts.push(<span className="bg-green-500 text-white">{current}</span>)
+          else if (action === 'ALTER') texts.push(<span><span className="bg-red-500 text-white">{old}</span><span className="bg-green-500 text-white">{current}</span></span>)
+          else texts.push(<span>{current || children}</span>)
+        } else if (readGtr) {
+          const word = readGtr.next().value
+          texts.push(
+            <span
+            key={word.id}
+            className={objToClassName({
+                'px-[2.2px]': true,
+                'bg-qoyyid-main': currentWordIds.includes(word.id),
+                'text-qoyyid-accent': currentWordIds.includes(word.id),
+                'select-none': true,
+                'text-lg': true,
+              })}
+              onClick={() => onSelectText(word)}
+            >{children}</span>
+          )
+        }
+        else texts = children
+        
+        return <span>{texts}</span>
+      },
+    }
+  }
+  
+  React.useEffect(() => {
+    function* readGenerator (): Generator<object> {
+      for (const word of words) yield word
+    }
+    
+    const readGtr = readGenerator()
+    
+    const ast = Markdown.parse(content)
+    setContentAst(ast)
+    
+    setContentRendered(Markdown.generate({ ast,
+      render: renderMarkdown({ readGtr })
+    }))
+  }, [content])
+  
+  React.useEffect(() => {
+    loadNote()
+  }, [])
+  
   return (
-    <div className="flex flex-col min-h-full bg-qoyyid-secondary px-3">
+    <div className="flex flex-col min-h-full bg-qoyyid-secondary">
       <div className="flex-none flex items-center justify-between py-2 pl-1 pr-3">
         <UButton type="link" color="accent" icon="chevronLeft-40" onClick={() => backToNotes()} />
-        <NoteButton state={state} setState={setState} selected={selected} onClickPreview={onClickPreview} />
+        <NoteButton state={state} setState={setState} selected={selected} onClickPreview={onClickPreview} onClickChanges={onClickChanges} />
       </div>
       <NoteContent
         state={state}
-        title={title}
+        title={formValue?.title || title}
         preview={preview}
+        changes={changes}
         noteWriteModeProps={{
           onSaveNote
         }}
