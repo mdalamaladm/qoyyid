@@ -44,26 +44,8 @@ export default function NoteReadMode ({ props: { title, contentRendered, words, 
       'pb-16': selected.length < 1,
     })}>
       <h1 className="px-2 pt-2 mb-[2.65rem] text-3xl text-center break-words select-none">{title}</h1>
-      <div className="markdown px-1.5" dir="auto">
+      <div className="markdown px-1.5 mx-3" dir="auto">
         {contentRendered}
-        {
-        //   words.map((c: Word) => (
-        //   <div
-        //     key={c.id}
-        //     className={objToClassName({
-        //       'px-[2.2px]': true,
-        //       'bg-qoyyid-main': currentWordId.includes(c.id),
-        //       'text-qoyyid-accent': currentWordId.includes(c.id),
-        //       'select-none': true,
-        //       'text-lg': true,
-        //     })}
-        //     onClick={() => onSelectText(c)}
-        //   >
-        //     {c.text}
-        //   </div>
-        // ))
-          
-        }
       </div>
       {
         selected.length > 0 &&
