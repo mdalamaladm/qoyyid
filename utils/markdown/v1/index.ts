@@ -3,10 +3,15 @@ import Parser from './parser'
 import Tokenizer from './tokenizer'
 
 export default class Markdown {
-  static generate (markdown, render) {
-    const tokenized = this.tokenizer.tokenize(markdown)
+  static generate ({ ast, markdown, render }) {
+    let parsed = null
+    
+    if (ast) parsed = ast
+    else {
+      const tokenized = this.tokenizer.tokenize(markdown)
 
-    const parsed = this.parser.parse(tokenized)
+      parsed = this.parser.parse(tokenized)
+    }
 
     const generated = this.generator.generate(parsed, render)
     
