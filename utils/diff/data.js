@@ -269,4 +269,40 @@ module.exports =
     current: 'Keep working hard Keep spirit Keep smiling every people Don\'t panic',
     expected: 'Keep working (hard) Keep spirit Keep smiling every people Don\'t panic'
   },
+  {
+    name: 'REMOVING THE FIRST SAME BETWEEN OTHER WORD',
+    old: 'This is an example real example',
+    current: 'This is an real example',
+    expected: 'This is an <example> real example',
+  },
+  {
+    name: 'ADDING THE SAME BEFORE OTHER WORD',
+    old: 'real example',
+    current: 'example real example',
+    expected: '(example) real example',
+  },
+  {
+    name: 'ADDING THE SAME AFTER OTHER WORD',
+    old: 'example real',
+    current: 'example real example',
+    expected: 'example real (example)',
+  },
+  {
+    name: 'A',
+    old: 'A B C D A B C',
+    current: 'A B C A B C',
+    expected: 'A B C <D> A B C',
+  },
+  {
+    name: 'B',
+    old: 'A B A',
+    current: 'B A',
+    expected: '<A> B A',
+  },
+  {
+    name: 'C',
+    old: 'A B A B A B A',
+    current: 'B A',
+    expected: '<A> B A (B) (A) (B) (A)',
+  },
 ]
