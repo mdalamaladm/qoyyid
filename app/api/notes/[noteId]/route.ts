@@ -68,15 +68,17 @@ export async function PUT(
         const wordId = uuidV4()
         
         await client.query('INSERT INTO words VALUES ($1, $2, $3, $4)', [wordId, noteId, word.current, +index + 1])
+        
+        if (word.meta?.id) await client.query('UPDATE words SET sequence = $1 WHERE id = $2', [+index + 1, word.meta.id])
       } else if (word.action === 'ALTER') {
         await client.query('UPDATE words SET text = $1 WHERE id = $2', [word.current, word.meta.id])
       } else if (word.action === 'DELETE') {
-        await client.query('DELETE FROM words WHERE id = $1', [word.meta.id])
+        const textIds = (await client.query('SELECT text_id FROM subnotes WHERE word_id = $1', [word.meta.id])).rows.map(r => r.text_id)
         
-        await client.query(`DELETE FROM subnotes WHERE word_id LIKE '%${word.meta.id}%'`)
+        await client.query(`DELETE FROM texts WHERE ${textIds.map(tId => `id = '${tId}'`).join(' OR ')}`)
+        
+        await client.query('DELETE FROM words WHERE id = $1', [word.meta.id])
       }
-      
-      if (word.meta?.id) await client.query('UPDATE words SET sequence = $1 WHERE id = $2', [+index + 1, word.meta.id])
     }
   
     await client.query('COMMIT')
