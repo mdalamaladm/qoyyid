@@ -24,31 +24,27 @@ export async function GET(
     if (!wordIds) return response({})
     
     wordIds = wordIds.split(',')
-    
-    console.log('=====')
+
     const res = await db.query(
       `SELECT text_id FROM subnotes WHERE ${wordIds.map(wId => `word_id = '${wId}'`).join(' OR ')}`
     )
-    
-      console.log('WORDIDS', wordIds)
-      console.log('RES', res.rows)
+
     for (const { text_id } of res.rows) {
-      const count = (await db.query(
+      const res2 = await db.query(
         `SELECT word_id FROM subnotes WHERE text_id = $1`, [text_id]
-      ))?.rowCount
-      console.log('COUNT', count)
-      if (count === wordIds.length) {
-        console.log('MASUK')
+      )
+      const count = res2.rowCount
+      const isAllThere = wordIds.reduce((isThere, current) => isThere && !!(res2.rows.find(r => r.word_id === current)), true)
+      
+      // If all Word Ids is in that Text Id and total of Word Ids in Text Id is same exact as Word Ids from the request, then that's the targeted Text Id
+      if (isAllThere && count === wordIds.length) {
         const textRes = await db.query(
           `SELECT * FROM texts WHERE id = $1`, [text_id]
         )
         
         return response({ data: textRes.rows[0] })
       }
-      console.log('COUNT', count)
     }
-    
-    console.log('GET RES', res.rows)
   
     return response({ data: { text: '' } })
   } catch (err) {
@@ -72,10 +68,6 @@ export async function POST(
     const text = payload.text
     const textId = uuidV4()
     const wordIds = payload.wordIds
-    
-    console.log('=====')
-    console.log('TEXT', text)
-    console.log('WORDIDS', wordIds)
     
     await client.query('BEGIN')
     
