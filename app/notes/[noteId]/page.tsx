@@ -366,7 +366,9 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
           setSelected(filtered)
         }
       } else if (!alreadySelected) {
-        setSelected([...selected, { id, text, sequence }])
+        const newSelected = [...selected, { id, text, sequence }]
+        newSelected.sort((a, b) => a.sequence - b.sequence)
+        setSelected(newSelected)
       }
     }
     else setSelected([{ id, text, sequence }])
@@ -438,7 +440,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
             while (action === 'DELETE') {
               texts.push(<><span className="bg-red-500 text-white">{old}</span><span>&nbsp;</span></>)
               
-              value = gtr?.next().value
+              value = diffGtr?.next().value
               old = value?.old?.text || value?.old
               current = value?.current?.text || value?.current
               action = value?.action
