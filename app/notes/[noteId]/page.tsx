@@ -49,12 +49,12 @@ const NoteButton = ({ state, setState, selected, onClickPreview, onClickChanges 
 
 const NoteContent = ({ state, title, preview, changes, noteWriteModeProps, noteReadModeProps }) => {
   if (state === 'preview') return <div>
-    <h1 className="px-2 pt-2 mb-[2.65rem] text-3xl text-center break-words select-none">{title}</h1>
-    <div className="markdown px-1.5 mx-3">{preview}</div>
+    <h1 className="px-2 pt-4 mb-[2.65rem] text-3xl text-center break-words select-none">{title}</h1>
+    <div className="markdown mx-4 text-lg" dir="auto">{preview}</div>
   </div>
   else if (state === 'changes') return <div>
-    <h1 className="px-2 pt-2 mb-[2.65rem] text-3xl text-center break-words select-none">{title}</h1>
-    <div className="markdown px-1.5 mx-3">{changes}</div>
+    <h1 className="px-2 pt-4 mb-[2.65rem] text-3xl text-center break-words select-none">{title}</h1>
+    <div className="markdown mx-4 text-lg" dir="auto">{changes}</div>
   </div>
   else if (state === 'write') return (
      <NoteWriteMode
@@ -141,12 +141,12 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     
     const { data, err, errParams } = await getNote(noteId)
     
-    // const { data: orders, err: errOrder, errParams: errOrderParams } = await getSubnoteOrder(noteId)
+    loadSubnoteOrder()
     
     if (err) {
       snackbar.error(locale(err, errParams))
       
-      if ((err) === 'Please login again') router.push('/login')
+      if (err === 'Please login again') router.push('/login')
     }
     
     if (!data) return
@@ -155,7 +155,6 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     setContent(data.note?.content)
     setOldContent(data.note?.content)
     setWords(data.words)
-    // setOrders(orders)
   
     initForm({
       value: {
@@ -208,6 +207,22 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
         text: [],
       }
     })
+  }
+  
+  const loadSubnoteOrder = async () => {
+    const noteId = params.noteId
+    
+    const { data, err, errParams: errParams } = await getSubnoteOrder(noteId)
+    
+    if (err) {
+      snackbar.error(locale(err, errParams))
+      
+      if (err === 'Please login again') router.push('/login')
+    }
+    
+    if (!data) return
+    
+    setOrders(data)
   }
 
   const backToNotes = () => router.push('/notes')
@@ -307,27 +322,23 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     setSubnoteState('read')
     
     loadSubnote()
+    loadSubnoteOrder()
   }
   
   const onChangeSubnotePage = (direction) => {
+    if (orders.length < 1) return
+    
     let current = subnotePage + direction
     
     if (current < 0) current = orders.length - 1
     else if (current > orders.length - 1) current = 0
     
+    const currentOrder = orders[current]
+    
     setSubnotePage(current)
+    setCurrentWordIds(currentOrder.wordIds)
     
-    const currentSelected = orders[current]
-    
-    setCurrentWordIds(currentSelected.word_id)
-    
-    const currentSelectedArr = currentSelected.word_id.split('|').map((ci) => {
-      const current = words.find((c) => c.id === ci)
-      
-      return { id: current.id, text: current.text, sequence: current.sequence }
-    })
-    
-    setSelected(currentSelectedArr)
+    setSelected(currentOrder.selected)
   }
   
   const onSelectText = ({ id, text, sequence }: Word) => {
@@ -393,10 +404,10 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
 
     setCurrentWordIds(wordIds)
     
-    // const currentPage = orders.findIndex(o => o.word_id === wordId)
+    const currentPage = orders.findIndex(o => o.wordIds.length === wordIds.length && wordIds.every(w => o.wordIds.includes(w)))
     const currentText = selected.map(s => s.text).join(' ')
     
-    // setSubnotePage(currentPage)
+    setSubnotePage(currentPage)
     setCurrentText(currentText)
   }, [selected])
   
