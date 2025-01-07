@@ -44,7 +44,7 @@ export default function NoteReadMode ({ props: { title, contentRendered, words, 
       'pb-16': selected.length < 1,
     })}>
       <h1 className="px-2 pt-2 mb-[2.65rem] text-3xl text-center break-words select-none">{title}</h1>
-      <div className="markdown px-1.5 mx-3" dir="auto">
+      <div className="markdown mx-4" dir="auto">
         {contentRendered}
       </div>
       {
