@@ -16,28 +16,44 @@ export async function GET(
     
     const noteId = params.noteId
     
-    const resContents = await db.query(
-      'SELECT * FROM words WHERE note_id = $1', [noteId]
-    )
-    
-    const sequences = resContents.rows.reduce((mapped, current) => ({
-      ...mapped,
-      [current.id]: current.sequence
-    }), {})
-  
     const res = await db.query(
-      'SELECT * FROM subnotes WHERE note_id = $1', [noteId]
+      'SELECT subnotes.word_id, words.text, words.sequence, subnotes.text_id FROM words INNER JOIN subnotes ON words.id = subnotes.word_id WHERE words.note_id = $1 ORDER BY subnotes.text_id;', [noteId]
     )
     
-    const ordered = res.rows.map(r => ({
-      ...r,
-      score: r.word_id.split('|').map(ci => sequences[ci]).join(''),
-      lastNum: sequences[r.word_id.split('|').slice(-1)[0]]
-    }))
+    let sequences = []
     
-    ordered.sort((a, b) => a.lastNum - b.lastNum || a.score - b.score)
+    for (const index in res.rows) {
+      const current = res.rows[index]
+      const next = res.rows[+index + 1]
+      
+      let seqIdx = sequences.findIndex(s => s.textId === current.text_id)
+      if (seqIdx < 0) sequences.push({
+        textId: current.text_id,
+        wordIds: [current.word_id],
+        score: [current.sequence],
+        lastNum: null,
+        selected: [{ id: current.word_id, text: current.text, sequence: current.sequence }]
+      })
+      else {
+        sequences[seqIdx].wordIds.push(current.word_id)
+        sequences[seqIdx].score.push(current.sequence)
+        sequences[seqIdx].selected.push({ id: current.word_id, text: current.text, sequence: current.sequence })
+      }
+      
+      if (next?.text_id !== current.text_id) {
+        if (seqIdx < 0) seqIdx = sequences.length - 1
+  
+        sequences[seqIdx].score.sort((a, b) => a - b)
+        sequences[seqIdx].score = sequences[seqIdx].score.join('')
+        
+        sequences[seqIdx].lastNum = sequences[seqIdx].score.slice(-1)
+      }
+    }
+    
+    sequences.sort((a, b) => a.lastNum - b.lastNum || a.score - b.score)
+    
 
-    return response({ data: ordered })
+    return response({ data: sequences })
   } catch (err) {
     console.error(err)
     
