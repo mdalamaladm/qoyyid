@@ -9,10 +9,7 @@ import response from '@/utils/response'
 
 export async function GET(
   req: NextRequest,
-  { params, searchParams }: {
-    params: { noteId: string },
-    searchParams: { wordIds: string }
-  }
+  { params }: { params: { noteId: string } }
 ) {
   try {
     const { err } = getDecodedToken()
@@ -56,6 +53,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
+  { params }: { params: { noteId: string } }
 ) {
   const client = await db.connect()
 
@@ -65,6 +63,7 @@ export async function POST(
     if (err) return response({ err })
     
     const payload = await request.json()
+    const noteId = params.noteId
     const text = payload.text
     const textId = uuidV4()
     const wordIds = payload.wordIds
@@ -72,7 +71,7 @@ export async function POST(
     await client.query('BEGIN')
     
     await client.query(
-      'INSERT INTO texts VALUES($1, $2)', [textId, text]
+      'INSERT INTO texts VALUES($1, $2, $3)', [textId, noteId, text]
     )
   
     for (const wId of wordIds) await client.query(
