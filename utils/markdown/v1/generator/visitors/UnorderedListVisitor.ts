@@ -8,7 +8,7 @@ export default class UnorderedListVisitor {
   }
   
   private static listsFor (bodyChildNode, render) {
-    const res = bodyChildNode.children.map(listNode => this.listVisitor.visit(listNode, render))
+    const res = bodyChildNode.children.map(listNode => this.listVisitor.visit({ listNode, render, parentType: 'ul' }))
     
     if (render) return res
     else return res?.join('') || ''

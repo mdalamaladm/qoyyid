@@ -11,8 +11,8 @@ export default class SentenceVisitor {
     }
   }
   
-  static visit (node, render) {
-    return this.visitorFor(node.type).visit(node, render)
+  static visit ({ node, textIndex, render, parentType }) {
+    return this.visitorFor(node.type).visit({ node, textIndex, render, parentType })
   }
   
   private static visitorFor (type) {

@@ -7,8 +7,8 @@ export default class BoldVisitor {
     return render?.bold?.(res) || `<b>${res}</b>`
   }
   
-  private static sentencesFor (nodes, render) {
-    const res = nodes.map(node => this.sentenceVisitor.visit(node, render))
+  private static sentencesFor ({ nodes, textIndex, render, parentType }) {
+    const res = nodes.map(node => this.sentenceVisitor.visit({ node, textIndex, render, parentType }))
   
     if (render) return res
     else return res?.join('') || ''

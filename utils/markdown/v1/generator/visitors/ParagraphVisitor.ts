@@ -8,7 +8,7 @@ export default class ParagraphVisitor {
   }
   
   private static sentencesFor (bodyChildNode, render) {
-    const res = bodyChildNode.children.map(node => this.sentenceVisitor.visit(node, render))
+    const res = bodyChildNode.children.map((node, textIndex) => this.sentenceVisitor.visit({ node, textIndex, render, parentType: 'p' }))
     
     if (render) return res
     return res?.join('') || ''

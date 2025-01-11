@@ -1,5 +1,5 @@
 export default class TextVisitor {
-  static visit (node, render) {
-    return render?.text?.(node.value, node.isWord) || node.value
+  static visit ({ node, textIndex, render, parentType }) {
+    return render?.text?.({ children: node.value, isWord: node.isWord, textIndex, parentType }) || node.value
   }
 }

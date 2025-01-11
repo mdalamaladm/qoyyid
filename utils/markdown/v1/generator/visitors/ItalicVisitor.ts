@@ -7,8 +7,8 @@ export default class ItalicVisitor {
     return render?.italic?.(res) || `<i>${res}</i>`
   }
   
-  private static sentencesFor (nodes, render) {
-    const res = nodes.map(node => this.sentenceVisitor.visit(node, render))
+  private static sentencesFor ({ nodes, textIndex, render, parentType }) {
+    const res = nodes.map(node => this.sentenceVisitor.visit({ node, textIndex, render, parentType }))
     
     if (render) return res
     else return res?.join('') || ''
