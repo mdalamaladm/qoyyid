@@ -75,7 +75,7 @@ export async function PUT(
       } else if (word.action === 'DELETE') {
         const textIds = (await client.query('SELECT text_id FROM subnotes WHERE word_id = $1', [word.meta.id])).rows.map(r => r.text_id)
         
-        await client.query(`DELETE FROM texts WHERE ${textIds.map(tId => `id = '${tId}'`).join(' OR ')}`)
+        if (textIds.length > 0) await client.query(`DELETE FROM texts WHERE ${textIds.map(tId => `id = '${tId}'`).join(' OR ')}`)
         
         await client.query('DELETE FROM words WHERE id = $1', [word.meta.id])
       }
