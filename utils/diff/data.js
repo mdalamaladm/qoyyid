@@ -295,14 +295,20 @@ module.exports =
   },
   {
     name: 'B',
-    old: 'A B A',
-    current: 'B A',
-    expected: '<A> B A',
+    old: 'A B A A C d A B',
+    current: 'B A A C d A B',
+    expected: '<A> B A A C d A B',
   },
   {
     name: 'C',
+    old: 'B A',
+    current: 'A B A',
+    expected: '(A) B A',
+  },
+  {
+    name: 'D',
     old: 'A B A B A B A',
     current: 'B A',
-    expected: '<A> B A (B) (A) (B) (A)',
+    expected: '<A> B A <B> <A> <B> <A>',
   },
 ]

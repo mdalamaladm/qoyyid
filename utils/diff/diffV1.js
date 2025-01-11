@@ -24,9 +24,6 @@ function diffV1 (oldArrParam, currentArrParam) {
   let oldArr = copy(oldArrParam)
   let currentArr = copy(currentArrParam)
   
-  console.log('OLD ARR', oldArr)
-  console.log('CURRENT ARR', currentArr)
-  
   let oldLength = oldArr.length
   let currentLength = currentArr.length
 
@@ -73,10 +70,11 @@ function diffV1 (oldArrParam, currentArrParam) {
     }
     
     let current = 0
-    let i = diffArr.length
+    const d = diffArr.filter(df => df.action !== 'UNUSED')
+    let i = d.length
     for (; i > -1; i--) {
-      const action = diffArr[i]?.action
-      const nextAction = diffArr[i - 1]?.action
+      const action = d[i]?.action
+      const nextAction = d[i - 1]?.action
       
       if (action === 'NONE') {
         current++
@@ -90,20 +88,12 @@ function diffV1 (oldArrParam, currentArrParam) {
         }
       }
     }
-    const deleteLength = diffArr.filter(d => d.action === 'DELETE').length
-    const insertLength = diffArr.filter(d => d.action === 'INSERT').length
-    // console.log(oldArr)
-    // console.log(currentArr)
-    console.log({ ...noneObj, deleteLength, insertLength })
-    console.log('-----')
     
     const payload = {
       oldArr: copy(oldArr),
       currentArr: copy(currentArr),
       diffArr,
       ...noneObj,
-      deleteLength,
-      insertLength,
     }
     
     res.push(payload)
@@ -111,27 +101,18 @@ function diffV1 (oldArrParam, currentArrParam) {
     currentArr.unshift('~')
   }
   
-  console.log(res.map(r => r.diffArr.map(d => d.action[0]).join('')))
-  
   if (!res.find(r => !!r.noneLength)) return finalFormat(res[currentLength - 1].diffArr)
   
   const selectedRes = res.reduce((selected, current) => {
-    if (current.noneIndex < selected.noneIndex) {
-      return current
-      if (current.insertLength < selected.insertLength && current.noneLength >= selected.noneLength) return current
-      else return selected
-    } else if (current.noneIndex === selected.noneIndex) {
-      if (current.noneLength >= selected.noneLength && current.deleteLength < selected.deleteLength ) return current
+    if (current.noneIndex < selected.noneIndex) return current
+    else if (current.noneIndex === selected.noneIndex) {
+      if (current.noneLength > selected.noneLength) return current
       else return selected
     } else return selected
   }, {
     noneLength: 0,
     noneIndex: Infinity,
-    deleteLength: Infinity,
   })
-  
-  console.log(selectedRes.diffArr.map(d => d.action[0]).join(''))
-  console.log('=======')
 
   let finalRes = []
   let latestIdx = 0
