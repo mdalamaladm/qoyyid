@@ -16,7 +16,6 @@ type NoteReadModeProps = {
   props: {
     title: string;
     contentRendered: object;
-    words: Word[];
     selected: Word[];
     currentWordId: string;
     subnoteState: 'read' | 'write';
@@ -34,7 +33,7 @@ type NoteReadModeProps = {
   }
 }
 
-export default function NoteReadMode ({ props: { title, contentRendered, words, currentWordId, selected, subnoteState, multitextMode, onChangeSubnotePage, onSelectText, onCloseSubnote, onEditSubnote, subnoteWriteProps, subnoteReadProps } }: NoteReadModeProps) {
+export default function NoteReadMode ({ props: { title, contentRendered, currentWordId, selected, subnoteState, multitextMode, onChangeSubnotePage, onSelectText, onCloseSubnote, onEditSubnote, subnoteWriteProps, subnoteReadProps } }: NoteReadModeProps) {
   
   return (
     <div className={objToClassName({
