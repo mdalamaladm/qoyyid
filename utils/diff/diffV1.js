@@ -20,6 +20,7 @@ function finalFormat (arr) {
 }
 
 function diffV1 (oldArrParam, currentArrParam) {
+  console.log('===')
   let res = []
   let oldArr = copy(oldArrParam)
   let currentArr = copy(currentArrParam)
@@ -69,9 +70,20 @@ function diffV1 (oldArrParam, currentArrParam) {
       noneIndex: Infinity,
     }
     
+    const d = diffArr
+      .filter(df => df.action !== 'UNUSED')
+      .reduce((t, c) => {
+        if (t.length < 1) return [c]
+        
+        if (t[t.length - 1].action === c.action) {
+          if (c.action === 'NONE') return [...t, c]
+          else return t
+        } else return [...t, c]
+      }, [])
+      
     let current = 0
-    const d = diffArr.filter(df => df.action !== 'UNUSED')
     let i = d.length
+    
     for (; i > -1; i--) {
       const action = d[i]?.action
       const nextAction = d[i - 1]?.action
@@ -101,6 +113,15 @@ function diffV1 (oldArrParam, currentArrParam) {
     currentArr.unshift('~')
   }
   
+  console.log(res.map(r => r.diffArr.filter(d => d.action !== 'UNUSED').reduce((t, c) => {
+      if (t.length < 1) return [c]
+      
+      if (t[t.length - 1].action === c.action) {
+        if (c.action === 'NONE') return [...t, c]
+        else return t
+      } else return [...t, c]
+    }, []).map(d => d.action[0]).join('')))
+  
   if (!res.find(r => !!r.noneLength)) return finalFormat(res[currentLength - 1].diffArr)
   
   const selectedRes = res.reduce((selected, current) => {
@@ -113,6 +134,15 @@ function diffV1 (oldArrParam, currentArrParam) {
     noneLength: 0,
     noneIndex: Infinity,
   })
+  
+  console.log(selectedRes.diffArr.filter(d => d.action !== 'UNUSED').reduce((t, c) => {
+      if (t.length < 1) return [c]
+      
+      if (t[t.length - 1].action === c.action) {
+        if (c.action === 'NONE') return [...t, c]
+        else return t
+      } else return [...t, c]
+    }, []).map(d => d.action[0]).join(''))
 
   let finalRes = []
   let latestIdx = 0

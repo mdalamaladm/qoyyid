@@ -311,4 +311,16 @@ module.exports =
     current: 'B A',
     expected: '<A> B A <B> <A> <B> <A>',
   },
+  {
+    name: '[[BREAK]]',
+    old: 'Halo halo hai [[BREAK]] hai',
+    current: 'Halo halo [[BREAK]] hai',
+    expected: 'Halo halo <hai> [[BREAK]] hai',
+  },
+  {
+    name: '[[BREAK]] 2',
+    old: 'Halo halo hai [[BREAK]] hai hehe [[BREAK]] hai [[BREAK]] hai',
+    current: 'Halo halo hai [[BREAK]] [[BREAK]] hai [[BREAK]] hai',
+    expected: 'Halo halo hai [[BREAK]] <hai> <hehe> [[BREAK]] hai [[BREAK]] hai',
+  },
 ]
