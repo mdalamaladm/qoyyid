@@ -97,10 +97,10 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   const { getNote, editNote, getSubnote, addSubnote, editSubnote, getSubnoteOrder } = useApi()
   const { formValue, initForm } = useForm()
   
-  const getWords = (content) => {
+  const getWords = ({ content, ast, idGtr }) => {
     const extractWord = (tc, res) => {
       if (tc.type === 'TEXT') {
-        if (tc.isWord) return res.push(tc.value)
+        if (tc.isWord) return res.push(idGtr ? { value: tc.value, meta: { id: idGtr.next().value }} : tc.value)
         else return res.push('IGNORE')
       } else {
         tc.value?.forEach(tcv => extractWord(tcv, res))
@@ -125,10 +125,10 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
       return res.filter(r => r !== 'IGNORE')
     }
   
-    const token = Markdown.parse(content)
+    const token = ast || Markdown.parse(content)
     
     return token?.children.reduce((result, current, index) => {
-      if (index !== 0) result.push('[[BREAK]]')
+      if (index !== 0) result.push(`[[BREAK_${current.type}]]`)
       
       return [...result, ...mapWords(current, index)]
       
@@ -230,11 +230,19 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   const onSaveNote = async (payload: FormValue) => {
     const id = params.noteId
     
-    const oldWords = words.map(c => ({ value: c.text, meta: { id: c.id } }))
+    const idGtr = (function* () { for (const word of words) yield word.id })()
     
-    const currentWords = getWords(payload.content)
+    const oldWords = getWords({ ast: contentAst, idGtr })
+    
+    const currentWords = getWords({ content: payload.content })
 
-    payload.words = diff(oldWords, currentWords)
+    let diffRes = diff(oldWords, currentWords)
+    
+    diffRes = diffRes.filter(d => !d.old.includes('[[BREAK') && !d.current.includes('[[BREAK'))
+    
+    alert(JSON.stringify(diffRes))
+    
+    payload.words = diffRes
   
     const { err, errParams } = await editNote(id, payload)
     
@@ -267,18 +275,23 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
       for (const d of diffRes) {
         const current = d.current?.text || d.current
         const old = d.old?.text || d.old
-        
-        if (current !== '[[BREAK]]' && old !== '[[BREAK]]') yield d
+
+        if (!current.includes('[[BREAK') && !old.includes('[[BREAK')) yield d
       }
     }
     
-    const oldWords = words.map(w => ({ value: w.text, meta: { id: w.id, sequence: w.sequence } }))
+    const oldWords = getWords({ ast: contentAst })
     
-    const currentWords = getWords(formValue.content)
-
+    alert(JSON.stringify(oldWords))
+    
+    const currentWords = getWords({ content: formValue.content })
+    
+    alert(JSON.stringify(currentWords))
     const diffRes = diff(oldWords, currentWords)
     
-    const diffGtr = diffGenerator(diffRes)
+    alert(JSON.stringify(diffRes))
+    
+    const diffGtr = () => diffGenerator(diffRes)
     
     const changes = Markdown.generate({
       markdown: formValue.content,
@@ -427,6 +440,17 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   
   
   const renderMarkdown = ({ diffGtr, readGtr } = {}) => {
+    let currentDiffGtr = diffGtr ? diffGtr() : null
+    let step = 0
+    
+    function prev () {
+      currentDiffGtr = diffGtr()
+      
+      step--
+      
+      for (let i = 1; i <= step; i++) currentDiffGtr.next()
+    }
+  
     return {
       body: (children) => <>{children}</>,
       paragraph: (children) => <p>{children}</p>,
@@ -435,32 +459,63 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
       list: (children) => <li>{children}</li>,
       bold: (children) => <b>{children}</b>,
       italic: (children) => <i>{children}</i>,
-      text: (children, isWord) => {
+      text: ({ children, isWord, textIndex, parentType }) => {
         if (!isWord) return <span>{children}</span>
     
         let texts = []
         
-        if (diffGtr) {
-          let value = diffGtr?.next().value
+        if (currentDiffGtr) {
+          let value = currentDiffGtr?.next().value
+          
+          step++
+  
           let old = value?.old?.text || value?.old
           let current = value?.current?.text || value?.current
           let action = value?.action
           
+          if (textIndex === 0) {
+            if (action === 'DELETE') {
+              while (action === 'DELETE') {
+                texts.push(<><span className="bg-red-500 text-white">{old}</span><span>&nbsp;</span></>)
+                
+                value = currentDiffGtr?.next().value
+                
+                step++
     
-          if (action === 'DELETE') {
-            while (action === 'DELETE') {
-              texts.push(<><span className="bg-red-500 text-white">{old}</span><span>&nbsp;</span></>)
-              
-              value = diffGtr?.next().value
-              old = value?.old?.text || value?.old
-              current = value?.current?.text || value?.current
-              action = value?.action
+                old = value?.old?.text || value?.old
+                current = value?.current?.text || value?.current
+                action = value?.action
+              }
             }
           }
           
           if (action === 'INSERT') texts.push(<span className="bg-green-500 text-white">{current}</span>)
           else if (action === 'ALTER') texts.push(<span><span className="bg-red-500 text-white">{old}</span><span className="bg-green-500 text-white">{current}</span></span>)
           else texts.push(<span>{current || children}</span>)
+          
+          value = currentDiffGtr?.next().value
+              
+          step++
+
+          old = value?.old?.text || value?.old
+          current = value?.current?.text || value?.current
+          action = value?.action
+          
+          if (action === 'DELETE') {
+            while (action === 'DELETE') {
+              texts.push(<><span>&nbsp;</span><span className="bg-red-500 text-white">{old}</span></>)
+              
+              value = currentDiffGtr?.next().value
+              
+              step++
+  
+              old = value?.old?.text || value?.old
+              current = value?.current?.text || value?.current
+              action = value?.action
+            }
+          }
+          
+          prev()
         } else if (readGtr) {
           const word = readGtr.next().value
           texts.push(
@@ -520,7 +575,6 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
         noteReadModeProps={{
           title,
           contentRendered,
-          words,
           selected,
           subnoteState,
           multitextMode,
