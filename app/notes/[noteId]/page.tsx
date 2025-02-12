@@ -97,6 +97,8 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   const { getNote, editNote, getSubnote, addSubnote, editSubnote, getSubnoteOrder } = useApi()
   const { formValue, initForm } = useForm()
   
+  const strip = (value) => value?.replace(/<div>|<br>/g, '\n')?.replace(/<\/div>/g, '')
+  
   const getWords = ({ content, ast, idGtr }) => {
     const extractWord = (tc, res) => {
       if (tc.type === 'TEXT') {
@@ -128,7 +130,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     const token = ast || Markdown.parse(content)
     
     return token?.children.reduce((result, current, index) => {
-      if (index !== 0) result.push(`[[BREAK_${current.type}]]`)
+      if (index !== 0) result.push(`[[BREAK_${index}_${current.type}]]`)
       
       return [...result, ...mapWords(current, index)]
       
@@ -234,13 +236,13 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     
     const oldWords = getWords({ ast: contentAst, idGtr })
     
+    payload.content = strip(payload.content)
+    
     const currentWords = getWords({ content: payload.content })
 
     let diffRes = diff(oldWords, currentWords)
     
-    diffRes = diffRes.filter(d => !d.old.includes('[[BREAK') && !d.current.includes('[[BREAK'))
-    
-    alert(JSON.stringify(diffRes))
+    // diffRes = diffRes.filter(d => !d.old.includes('[[BREAK') && !d.current.includes('[[BREAK'))
     
     payload.words = diffRes
   
@@ -261,7 +263,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   
   const onClickPreview = () => {
     const preview = Markdown.generate({
-      markdown: formValue.content,
+      markdown: strip(formValue.content),
       render: renderMarkdown()
     })
 
@@ -282,19 +284,14 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     
     const oldWords = getWords({ ast: contentAst })
     
-    alert(JSON.stringify(oldWords))
-    
-    const currentWords = getWords({ content: formValue.content })
-    
-    alert(JSON.stringify(currentWords))
+    const currentWords = getWords({ content: strip(formValue.content) })
+
     const diffRes = diff(oldWords, currentWords)
-    
-    alert(JSON.stringify(diffRes))
     
     const diffGtr = () => diffGenerator(diffRes)
     
     const changes = Markdown.generate({
-      markdown: formValue.content,
+      markdown: strip(formValue.content),
       render: renderMarkdown({ diffGtr })
     })
 
@@ -560,6 +557,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   
   return (
     <div className="flex flex-col min-h-full bg-qoyyid-secondary">
+      {JSON.stringify(strip(formValue?.content))}
       <div className="flex-none flex items-center justify-between py-2 pl-1 pr-3">
         <UButton type="link" color="accent" icon="chevronLeft-40" onClick={() => backToNotes()} />
         <NoteButton state={state} setState={setState} selected={selected} onClickPreview={onClickPreview} onClickChanges={onClickChanges} />

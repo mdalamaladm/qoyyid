@@ -1,0 +1,32 @@
+2025-02-10 16:58:06.635 +03 [17498] LOG:  starting PostgreSQL 17.0 on aarch64-unknown-linux-android, compiled by Android (12470979, +pgo, +bolt, +lto, +mlgo, based on r522817c) clang version 18.0.3 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262), 64-bit
+2025-02-10 16:58:06.637 +03 [17498] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2025-02-10 16:58:06.638 +03 [17498] LOG:  listening on Unix socket "/data/data/com.termux/files/usr/tmp/.s.PGSQL.5432"
+2025-02-10 16:58:06.642 +03 [17504] LOG:  database system was shut down at 2025-02-10 16:56:57 +03
+2025-02-10 16:58:06.649 +03 [17498] LOG:  database system is ready to accept connections
+2025-02-10 16:58:45.996 +03 [17738] FATAL:  database "alam" does not exist
+2025-02-10 16:58:54.967 +03 [17751] FATAL:  database "postgre" does not exist
+2025-02-10 17:00:45.411 +03 [19392] FATAL:  lock file "postmaster.pid" already exists
+2025-02-10 17:00:45.411 +03 [19392] HINT:  Is another postmaster (PID 17498) running in data directory "/data/data/com.termux/files/usr/var/lib/postgresql"?
+2025-02-10 17:00:59.041 +03 [19462] FATAL:  lock file "postmaster.pid" already exists
+2025-02-10 17:00:59.041 +03 [19462] HINT:  Is another postmaster (PID 17498) running in data directory "/data/data/com.termux/files/usr/var/lib/postgresql"?
+2025-02-10 17:03:06.741 +03 [17502] LOG:  checkpoint starting: time
+2025-02-10 17:03:11.596 +03 [17502] LOG:  checkpoint complete: wrote 50 buffers (0.3%); 0 WAL file(s) added, 0 removed, 0 recycled; write=4.812 s, sync=0.016 s, total=4.856 s; sync files=15, longest=0.005 s, average=0.001 s; distance=273 kB, estimate=273 kB; lsn=0/1530E08, redo lsn=0/1530D78
+2025-02-10 17:12:58.744 +03 [22041] FATAL:  lock file "postmaster.pid" already exists
+2025-02-10 17:12:58.744 +03 [22041] HINT:  Is another postmaster (PID 17498) running in data directory "/data/data/com.termux/files/usr/var/lib/postgresql"?
+2025-02-10 17:15:54.642 +03 [22362] LOG:  starting PostgreSQL 17.0 on aarch64-unknown-linux-android, compiled by Android (12470979, +pgo, +bolt, +lto, +mlgo, based on r522817c) clang version 18.0.3 (https://android.googlesource.com/toolchain/llvm-project d8003a456d14a3deb8054cdaa529ffbf02d9b262), 64-bit
+2025-02-10 17:15:54.643 +03 [22362] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2025-02-10 17:15:54.644 +03 [22362] LOG:  listening on Unix socket "/data/data/com.termux/files/usr/tmp/.s.PGSQL.5432"
+2025-02-10 17:15:54.666 +03 [22368] LOG:  database system was interrupted; last known up at 2025-02-10 17:03:11 +03
+2025-02-10 17:15:54.983 +03 [22368] LOG:  database system was not properly shut down; automatic recovery in progress
+2025-02-10 17:15:54.985 +03 [22368] LOG:  redo starts at 0/1530D78
+2025-02-10 17:15:54.986 +03 [22368] LOG:  invalid record length at 0/1530EB8: expected at least 24, got 0
+2025-02-10 17:15:54.986 +03 [22368] LOG:  redo done at 0/1530E80 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+2025-02-10 17:15:54.992 +03 [22366] LOG:  checkpoint starting: end-of-recovery immediate wait
+2025-02-10 17:15:55.024 +03 [22366] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.034 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/1530EB8, redo lsn=0/1530EB8
+2025-02-10 17:15:55.028 +03 [22362] LOG:  database system is ready to accept connections
+2025-02-10 17:16:01.789 +03 [22398] ERROR:  database "qoyyid" does not exist
+2025-02-10 17:16:01.789 +03 [22398] STATEMENT:  DROP DATABASE qoyyid;
+2025-02-10 17:20:54.068 +03 [22366] LOG:  checkpoint starting: time
+2025-02-10 17:25:23.712 +03 [22366] LOG:  checkpoint complete: wrote 951 buffers (5.8%); 0 WAL file(s) added, 0 removed, 0 recycled; write=269.581 s, sync=0.039 s, total=269.648 s; sync files=322, longest=0.002 s, average=0.001 s; distance=4362 kB, estimate=4362 kB; lsn=0/1973AF8, redo lsn=0/1973A68
+2025-02-10 17:45:21.693 +03 [22366] LOG:  checkpoint starting: time
+2025-02-10 17:45:23.057 +03 [22366] LOG:  checkpoint complete: wrote 13 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.236 s, sync=0.017 s, total=1.365 s; sync files=10, longest=0.007 s, average=0.002 s; distance=2 kB, estimate=3926 kB; lsn=0/19744E8, redo lsn=0/1974490

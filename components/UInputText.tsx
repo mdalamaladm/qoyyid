@@ -15,7 +15,7 @@ type UInputTextProps = {
   inputStyle: string;
 };
 
-const id = `uinputtext-${Date.now()}`
+const id = `uinputtext-${name}`
 
 export default function UInputText({ label, name, block, hideMessage, labelStyle, inputStyle }: UInputTextProps) {
   

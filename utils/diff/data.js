@@ -323,4 +323,16 @@ module.exports =
     current: 'Halo halo hai [[BREAK]] [[BREAK]] hai [[BREAK]] hai',
     expected: 'Halo halo hai [[BREAK]] <hai> <hehe> [[BREAK]] hai [[BREAK]] hai',
   },
+  {
+    name: '[[BREAK]] 3',
+    old: 'Halo halo hai [[BREAK_1_UNORDERED_LIST]] hai hehe [[BREAK_2_UNORDERED_LIST]] hai [[BREAK_3_PARAGRAPH]] hai',
+    current: 'Halo halo hai [[BREAK_2_UNORDERED_LIST]] hai [[BREAK_3_PARAGRAPH]] hai',
+    expected: 'Halo halo hai <[[BREAK_1_UNORDERED_LIST]]> <hai> <hehe> [[BREAK_2_UNORDERED_LIST]] hai [[BREAK_3_PARAGRAPH]] hai',
+  },
+  {
+    name: 'E',
+    old: 'C D E X A B X A H I',
+    current: 'C D E X A H I',
+    expected: 'C D E X A <B> <X> <A> H I',
+  },
 ]

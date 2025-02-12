@@ -6,7 +6,7 @@ import UInputWrapper from '@/components/UInputWrapper'
 
 import UClass from '@/utils/UClass'
 
-type UInputTextareaProps = {
+type UInputDivEditableProps = {
   label?: string;
   name: string;
   block: string;
@@ -16,22 +16,22 @@ type UInputTextareaProps = {
   placeholder: (string) => string
 };
 
-const id = `uinputtextarea-${name}`
+const id = `uinputdieditable-${name}`
 
-export default function UInputTextarea({ label, name, block, hideMessage, labelStyle, inputStyle, placeholder = () => '', ...props }: UInputTextareaProps) {
-  const textareaRef = React.useRef(null)
+export default function UInputDivEditable({ label, name, block, hideMessage, labelStyle, inputStyle, placeholder = () => '', ...props }: UInputTextareaProps) {
+  const divEditableRef = React.useRef(null)
   
   const { getInput, setForm } = useForm()
   
   const { value, message, error } = getInput(name)
   
   const handlerInput = (e) => {
-    setForm(name, e.target.value)
+    setForm(name, e.currentTarget.innerHTML)
   }
   
   React.useEffect(() => {
-    textareaRef.current.setAttribute("style", "height:" + (textareaRef.current.scrollHeight) + "px;overflow-y:hidden;");
-    textareaRef.current.addEventListener("input", onInput, false);
+    divEditableRef.current.setAttribute("style", "height:" + (divEditableRef.current.scrollHeight) + "px;overflow-y:hidden;");
+    divEditableRef.current.addEventListener("input", onInput, false);
 
     function onInput() {
       this.style.height = 'auto';
@@ -39,14 +39,15 @@ export default function UInputTextarea({ label, name, block, hideMessage, labelS
     }
     
     () => {
-      textareaRef.current.removeEventListener('input', onInput)
+      divEditableRef.current.removeEventListener('input', onInput)
     }
-  }, [textareaRef])
+  }, [divEditableRef])
   
   return (
     <UInputWrapper message={message} hideMessage={hideMessage} error={error}>
       <label htmlFor={id} className={labelStyle || UClass.label(error && !hideMessage)}>{label}</label>
-      <textarea ref={textareaRef} id={id} value={value} name={name} onChange={handlerInput} className={inputStyle || UClass.input(error && !hideMessage, block)} dir="auto" placeholder={placeholder(value)} {...props} />
+      <div contentEditable ref={divEditableRef} id={id} value={value} name={name} onBlur={handlerInput} className={inputStyle || UClass.input(error && !hideMessage, block)} dir="auto" placeholder={placeholder(value)} 
+      dangerouslySetInnerHTML={{__html: value}}{...props} />
     </UInputWrapper>
   )
 }

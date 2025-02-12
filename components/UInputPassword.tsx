@@ -15,7 +15,7 @@ type UInputPasswordProps = {
   inputStyle: string;
 };
 
-const id = `uinputpassword-${Date.now()}`
+const id = `uinputpassword-${name}`
 
 export default function UInputPassword({ label, name, block, hideMessage, labelStyle, inputStyle }: UInputPasswordProps) {
   
