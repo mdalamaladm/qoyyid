@@ -15,7 +15,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" dir="auto">
-      <body className="font-sans text-qoyyid-black"><RootWrapper>{children}</RootWrapper></body>
+      <body className="font-sans text-qoyyid-black">
+        <RootWrapper>{children}</RootWrapper>
+      </body>
     </html>
   )
 }
