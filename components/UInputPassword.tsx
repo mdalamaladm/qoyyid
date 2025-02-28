@@ -15,9 +15,9 @@ type UInputPasswordProps = {
   inputStyle: string;
 };
 
-const id = `uinputpassword-${name}`
 
 export default function UInputPassword({ label, name, block, hideMessage, labelStyle, inputStyle }: UInputPasswordProps) {
+  const id = `uinputpassword-${name}`
   
   const { getInput, setForm } = useForm()
   
@@ -30,7 +30,7 @@ export default function UInputPassword({ label, name, block, hideMessage, labelS
   return (
     <UInputWrapper message={message} hideMessage={hideMessage} error={error}>
       <label htmlFor={id} className={labelStyle || UClass.label(error && !hideMessage)}>{label}</label>
-      <input id={id} value={value} type="password" name={name} onInput={handlerInput} className={inputStyle || UClass.input(error && !hideMessage, block)}/>
+      <input id={id} value={value || ''} type="password" name={name} onInput={handlerInput} className={inputStyle || UClass.input(error && !hideMessage, block)}/>
     </UInputWrapper>
   )
 }

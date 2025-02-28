@@ -15,9 +15,9 @@ type UInputTextProps = {
   inputStyle: string;
 };
 
-const id = `uinputtext-${name}`
 
 export default function UInputText({ label, name, block, hideMessage, labelStyle, inputStyle }: UInputTextProps) {
+  const id = `uinputtext-${name}`
   
   const { getInput, setForm } = useForm()
   
@@ -30,7 +30,7 @@ export default function UInputText({ label, name, block, hideMessage, labelStyle
   return (
     <UInputWrapper message={message} hideMessage={hideMessage} error={error}>
       <label htmlFor={id} className={labelStyle || UClass.label(error && !hideMessage)}>{label}</label>
-      <input id={id} value={value} type="text" name={name} onInput={handlerInput} className={inputStyle || UClass.input(error && !hideMessage, block)} dir="auto"/>
+      <input id={id} value={value || ''} type="text" name={name} onInput={handlerInput} className={inputStyle || UClass.input(error && !hideMessage, block)} dir="auto"/>
     </UInputWrapper>
   )
 }

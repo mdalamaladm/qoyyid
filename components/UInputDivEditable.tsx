@@ -13,33 +13,48 @@ type UInputDivEditableProps = {
   hideMessage?: boolean;
   labelStyle: string;
   inputStyle: string;
-  placeholder: (string) => string
+  placeholder: (text: string) => string
 };
 
-const id = `uinputdieditable-${name}`
 
-export default function UInputDivEditable({ label, name, block, hideMessage, labelStyle, inputStyle, placeholder = () => '', ...props }: UInputTextareaProps) {
-  const divEditableRef = React.useRef(null)
+export default function UInputDivEditable(
+  {
+    label,
+    name,
+    block,
+    hideMessage,
+    labelStyle,
+    inputStyle,
+    placeholder = () => '',
+    ...props
+  }: UInputDivEditableProps) {
+  const id = `uinputdieditable-${name}`
+
+  const divEditableRef = React.useRef<HTMLDivElement>(null)
   
   const { getInput, setForm } = useForm()
   
   const { value, message, error } = getInput(name)
   
-  const handlerInput = (e) => {
+  const handlerInput = (e: React.ChangeEvent) => {
     setForm(name, e.currentTarget.innerHTML)
   }
   
   React.useEffect(() => {
-    divEditableRef.current.setAttribute("style", "height:" + (divEditableRef.current.scrollHeight) + "px;overflow-y:hidden;");
-    divEditableRef.current.addEventListener("input", onInput, false);
+    if (divEditableRef.current) {
+      divEditableRef.current.setAttribute("style", "height:" + (divEditableRef.current.scrollHeight) + "px;overflow-y:hidden;");
+      divEditableRef.current.addEventListener("input", onInput, false);
 
-    function onInput() {
-      this.style.height = 'auto';
-      this.style.height = (this.scrollHeight) + "px";
-    }
-    
-    () => {
-      divEditableRef.current.removeEventListener('input', onInput)
+      function onInput() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + "px";
+      }
+      
+      () => {
+        if (divEditableRef.current) {
+          divEditableRef.current.removeEventListener('input', onInput)
+        }
+      }
     }
   }, [divEditableRef])
   
@@ -47,7 +62,7 @@ export default function UInputDivEditable({ label, name, block, hideMessage, lab
     <UInputWrapper message={message} hideMessage={hideMessage} error={error}>
       <label htmlFor={id} className={labelStyle || UClass.label(error && !hideMessage)}>{label}</label>
       <div contentEditable ref={divEditableRef} id={id} value={value} name={name} onBlur={handlerInput} className={inputStyle || UClass.input(error && !hideMessage, block)} dir="auto" placeholder={placeholder(value)} 
-      dangerouslySetInnerHTML={{__html: value}}{...props} />
+      dangerouslySetInnerHTML={{ __html: value?.replace(/\n/g, '<br />') }}{...props} />
     </UInputWrapper>
   )
 }

@@ -9,16 +9,17 @@ import UClass from '@/utils/UClass'
 type UInputTextareaProps = {
   label?: string;
   name: string;
-  block: string;
+  block?: string;
   hideMessage?: boolean;
-  labelStyle: string;
-  inputStyle: string;
-  placeholder: (string) => string
+  labelStyle?: string;
+  inputStyle?: string;
+  placeholder: (arg: string) => string
 };
 
-const id = `uinputtextarea-${name}`
 
 export default function UInputTextarea({ label, name, block, hideMessage, labelStyle, inputStyle, placeholder = () => '', ...props }: UInputTextareaProps) {
+  const id = `uinputtextarea-${name}`
+  
   const textareaRef = React.useRef(null)
   
   const { getInput, setForm } = useForm()
