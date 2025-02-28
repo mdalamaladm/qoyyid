@@ -12,13 +12,13 @@ import NoteWriteMode from '@/components/NoteWriteMode'
 import NoteReadMode from '@/components/NoteReadMode'
 import UButton from '@/components/UButton'
 
-import { Note } from '@/@types/note.d'
 import { FormValue } from '@/@types/form.d'
 import { Word } from '@/@types/word.d'
 
 import diff from '@/utils/diff'
 import Markdown from '@/utils/markdown/v1'
 import objToClassName from '@/utils/objToClassName'
+import { MarkdownNode } from '@/@types/markdown'
 
 let dblClickTimer = null
 let dblClick: { id?: string, time?: number } = {}
@@ -27,8 +27,16 @@ type DetailNotesParams = {
   noteId: string;
 }
 
+type DetailNotesNoteButtonParams = {
+  state: string;
+  setState: () => void;
+  selected: Word[];
+  onClickPreview: () => void;
+  onClickChanges: () => void;
+}
+
 const PreviewButton = ({ state, setState, onClickPreview, onClickChanges }) => (
-  <div class="flex mr-3">
+  <div className="flex mr-3">
     <UButton type="solidinv" color="accent" icon="edit" style="rounded-r-none" disabled={state !== 'preview' && state !== 'changes'} onClick={() => setState('write')} />
     <UButton type="solidinv" color="accent" icon="preview" style="rounded-none" disabled={state === 'preview'} onClick={onClickPreview} />
     <UButton type="solidinv" color="accent" icon="difference" style="rounded-l-none" disabled={state === 'changes'} onClick={onClickChanges} />
@@ -78,15 +86,15 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   const [content, setContent] = React.useState<string>('')
   const [oldContent, setOldContent] = React.useState<string>('')
   const [contentRendered, setContentRendered] = React.useState<object>(<></>)
-  const [contentAst, setContentAst] = React.useState<object>(null)
+  const [contentAst, setContentAst] = React.useState<MarkdownNode[] | null>(null)
   const [words, setWords] = React.useState<Word[]>([])
-  const [selected, setSelected] = React.useState<Content[]>([])
+  const [selected, setSelected] = React.useState<Word[]>([])
   const [multitextMode, setMultitextMode] = React.useState<boolean>(false)
   const [subnoteState, setSubnoteState] = React.useState<'read' | 'write'>('read')
   const [subnote, setSubnote] = React.useState<string>('')
   const [subnoteId, setSubnoteId] = React.useState<string>('')
   const [orders, setOrders] = React.useState<Word[]>([])
-  const [subnotePage, setSubnotePage] = React.useState<number | null>(null)
+  const [subnotePage, setSubnotePage] = React.useState<number>(0)
   const [currentWordIds, setCurrentWordIds] = React.useState<string[]>([])
   const [currentText, setCurrentText] = React.useState<string>('')
   const [preview, setPreview] = React.useState<string>('')
@@ -97,10 +105,22 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   const { getNote, editNote, getSubnote, addSubnote, editSubnote, getSubnoteOrder } = useApi()
   const { formValue, initForm } = useForm()
   
-  const strip = (value) => value?.replace(/<div>|<br>/g, '\n')?.replace(/<\/div>/g, '')
+  const strip = (value: string) => value?.replace(/<div>|<br>/g, '\n')?.replace(/<\/div>/g, '')
   
-  const getWords = ({ content, ast, idGtr }) => {
-    const extractWord = (tc, res) => {
+  const getWords = (
+    { content, ast, idGtr }:
+    {
+      content: string;
+      ast: MarkdownNode[];
+      idGtr: any;
+    }
+  ) => {
+    type DiffInput = string | {
+      value: string;
+      meta: object;
+    }
+
+    const extractWord = (tc: MarkdownNode, res: DiffInput[]) => {
       if (tc.type === 'TEXT') {
         if (tc.isWord) return res.push(idGtr ? { value: tc.value, meta: { id: idGtr.next().value }} : tc.value)
         else return res.push('IGNORE')
@@ -109,15 +129,15 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
       }
     }
       
-    const mapWords = (token) => {
-      let res = []
+    const mapWords = (node: MarkdownNode) => {
+      let res: DiffInput[] = []
   
-      if (token.type === 'PARAGRAPH') {
-        token.children.forEach(tc => {
+      if (node.type === 'PARAGRAPH') {
+        node.children.forEach(tc => {
           extractWord(tc, res)
         })
-      } else if (token.type === 'UNORDERED_LIST') {
-        token.children.forEach(tc => {
+      } else if (node.type === 'UNORDERED_LIST') {
+        node.children.forEach(tc => {
           tc.sentences.forEach(tcs => {
             extractWord(tcs, res)
           })
@@ -127,9 +147,9 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
       return res.filter(r => r !== 'IGNORE')
     }
   
-    const token = ast || Markdown.parse(content)
+    const node = ast || Markdown.parse(content)
     
-    return token?.children.reduce((result, current, index) => {
+    return node?.children.reduce((result, current, index) => {
       if (index !== 0) result.push(`[[BREAK_${index}_${current.type}]]`)
       
       return [...result, ...mapWords(current, index)]
@@ -139,7 +159,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   }
 
   const loadNote = async () => {
-    const noteId = params.noteId
+    const noteId = (await params).noteId
     
     const { data, err, errParams } = await getNote(noteId)
     
@@ -171,7 +191,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   }
   
   const loadSubnote = async () => {
-    const noteId = params.noteId
+    const noteId = (await params).noteId
     const wordIds = currentWordIds
       
     const { data, err, errParams } = await getSubnote(noteId, wordIds)
@@ -212,7 +232,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   }
   
   const loadSubnoteOrder = async () => {
-    const noteId = params.noteId
+    const noteId = (await params).noteId
     
     const { data, err, errParams: errParams } = await getSubnoteOrder(noteId)
     
@@ -230,7 +250,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   const backToNotes = () => router.push('/notes')
   
   const onSaveNote = async (payload: FormValue) => {
-    const id = params.noteId
+    const id = (await params).noteId
     
     const idGtr = (function* () { for (const word of words) yield word.id })()
     
@@ -301,7 +321,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   }
 
   const onSaveSubnote = async (payload: FormValue) => {
-    const noteId = params.noteId
+    const noteId = (await params).noteId
     const wordIds = [...selected].map(w => w.id)
     
     let err = null
@@ -335,7 +355,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
     loadSubnoteOrder()
   }
   
-  const onChangeSubnotePage = (direction) => {
+  const onChangeSubnotePage = (direction: 1 | -1) => {
     if (orders.length < 1) return
     
     let current = subnotePage + direction
@@ -382,7 +402,7 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   
       if (alreadySelected && selected.length > 1) {
         if (multitextMode) {
-          const filtered = selected.filter((s: Word) => s.id !== id)
+          const filtered = selected.filter(s => s.id !== id)
           
           setSelected(filtered)
         }
@@ -436,7 +456,9 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
   }, [currentWordIds])
   
   
-  const renderMarkdown = ({ diffGtr, readGtr } = {}) => {
+  const renderMarkdown = (
+    { diffGtr, readGtr } = {}
+  ) => {
     let currentDiffGtr = diffGtr ? diffGtr() : null
     let step = 0
     
@@ -447,19 +469,31 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
       
       for (let i = 1; i <= step; i++) currentDiffGtr.next()
     }
+
+    function getUniqueChildren (children: React.ReactElement[]) {
+      return children?.map((c, i) => <React.Fragment key={i}>{c}</React.Fragment>) || children
+    }
   
     return {
-      body: (children) => <>{children}</>,
-      paragraph: (children) => <p>{children}</p>,
-      unorderedList: (children) => <ul>{children}</ul>,
-      newLine: (children) => <br/>,
-      list: (children) => <li>{children}</li>,
-      bold: (children) => <b>{children}</b>,
-      italic: (children) => <i>{children}</i>,
-      text: ({ children, isWord, textIndex, parentType }) => {
+      body: (children: React.ReactElement[]) => <React.Fragment>{getUniqueChildren(children)}</React.Fragment>,
+      paragraph: (children: React.ReactElement[]) => <p>{getUniqueChildren(children)}</p>,
+      unorderedList: (children: React.ReactElement[]) => <ul>{getUniqueChildren(children)}</ul>,
+      newLine: () => <br/>,
+      list: (children: React.ReactElement[]) => <li>{getUniqueChildren(children)}</li>,
+      bold: (children: React.ReactElement[]) => <b>{getUniqueChildren(children)}</b>,
+      italic: (children: React.ReactElement[]) => <i>{getUniqueChildren(children)}</i>,
+      text: (
+        { children, isWord, textIndex, parentType }:
+        {
+          children: React.ReactElement;
+          isWord: boolean;
+          textIndex: number;
+          parentType: string;
+        }
+      ) => {
         if (!isWord) return <span>{children}</span>
     
-        let texts = []
+        let texts: React.ReactElement[] = []
         
         if (currentDiffGtr) {
           let value = currentDiffGtr?.next().value
@@ -529,9 +563,15 @@ export default function DetailNotesPage ({ params }: { params: DetailNotesParams
             >{children}</span>
           )
         }
-        else texts = children
+        else texts = [children]
         
-        return <span>{texts}</span>
+        return (
+          <span>
+            {
+              texts.map((text, index) => <React.Fragment key={index}>{text}</React.Fragment>)
+            }
+          </span>
+        )
       },
     }
   }
