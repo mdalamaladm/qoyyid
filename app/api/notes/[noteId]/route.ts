@@ -10,11 +10,11 @@ export async function GET(
   { params }: { params: { noteId: string }}
 ) {
   try {
-    const { err } = getDecodedToken()
+    const { err } = await getDecodedToken()
   
     if (err) return response({ err })
     
-    const noteId = params.noteId
+    const noteId = (await params).noteId
   
     const resNotes = await db.query(
       'SELECT * FROM notes WHERE id = $1', [noteId]
@@ -44,11 +44,11 @@ export async function PUT(
   const client = await db.connect()
 
   try {
-    const { err } = getDecodedToken()
+    const { err } = await getDecodedToken()
   
     if (err) return response({ err })
     
-    const noteId = params.noteId
+    const noteId = (await params).noteId
     
     const payload = await request.json()
     const title = payload?.title || ''
@@ -100,11 +100,11 @@ export async function DELETE(
   { params }: { params: { noteId: string }}
 ) {
   try {
-    const { err } = getDecodedToken()
+    const { err } = await getDecodedToken()
   
     if (err) return response({ err })
   
-    const noteId = params.noteId
+    const noteId = (await params).noteId
   
     const res = await db.query(
       'DELETE FROM notes WHERE id = $1', [noteId]

@@ -8,7 +8,7 @@ import response from '@/utils/response'
 
 export async function GET() {
   try {
-    const { data, err } = getDecodedToken()
+    const { data, err } = await getDecodedToken()
   
     if (err) return response({ err })
 
@@ -37,7 +37,7 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const { data, err } = getDecodedToken()
+    const { data, err } = await getDecodedToken()
   
     if (err) return response({ err })
     

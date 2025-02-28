@@ -10,11 +10,11 @@ export async function GET(
   { params }: { params: { noteId: string }}
 ) {
   try {
-    const { err } = getDecodedToken()
+    const { err } = await getDecodedToken()
   
     if (err) return response({ err })
     
-    const noteId = params.noteId
+    const noteId = (await params).noteId
     
     const res = await db.query(
       'SELECT subnotes.word_id, words.text, words.sequence, subnotes.text_id FROM words INNER JOIN subnotes ON words.id = subnotes.word_id WHERE words.note_id = $1 ORDER BY subnotes.text_id;', [noteId]

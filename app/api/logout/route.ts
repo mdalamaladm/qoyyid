@@ -4,7 +4,7 @@ import response from '@/utils/response'
 
 export async function POST (request: Request) {
   try {
-    cookies().delete('token')
+    (await cookies()).delete('token')
     
     return response({})
   } catch (err) {

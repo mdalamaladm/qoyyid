@@ -39,7 +39,9 @@ export async function POST (request: Request) {
       data: { id: user.id, name: user.name, username: user.username }
     }, JWT_SECRET, { expiresIn: '1h' })
     
-    cookies().set('token', token, { expires: Date.now() + 60 * 60 * 1000 })
+    const c = await cookies()
+    
+    c.set('token', token, { expires: Date.now() + 60 * 60 * 1000 })
     
     return response({ data: { name: user.name }})
   

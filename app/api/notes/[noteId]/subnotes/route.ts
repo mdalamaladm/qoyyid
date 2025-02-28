@@ -12,18 +12,18 @@ export async function GET(
   { params }: { params: { noteId: string } }
 ) {
   try {
-    const { err } = getDecodedToken()
+    const { err } = await getDecodedToken()
   
     if (err) return response({ err })
     
-    let wordIds = req.nextUrl.searchParams.get('wordIds')
+    let wordIds: string = req.nextUrl.searchParams.get('wordIds')
     
     if (!wordIds) return response({})
     
-    wordIds = wordIds.split(',')
+    let wordIdsArr: string[] = wordIds.split(',')
 
     const res = await db.query(
-      `SELECT text_id FROM subnotes WHERE ${wordIds.map(wId => `word_id = '${wId}'`).join(' OR ')}`
+      `SELECT text_id FROM subnotes WHERE ${wordIdsArr.map(wId => `word_id = '${wId}'`).join(' OR ')}`
     )
 
     for (const { text_id } of res.rows) {
@@ -31,10 +31,10 @@ export async function GET(
         `SELECT word_id FROM subnotes WHERE text_id = $1`, [text_id]
       )
       const count = res2.rowCount
-      const isAllThere = wordIds.reduce((isThere, current) => isThere && !!(res2.rows.find(r => r.word_id === current)), true)
+      const isAllThere = wordIdsArr.reduce((isThere, current) => isThere && !!(res2.rows.find(r => r.word_id === current)), true)
       
       // If all Word Ids is in that Text Id and total of Word Ids in Text Id is same exact as Word Ids from the request, then that's the targeted Text Id
-      if (isAllThere && count === wordIds.length) {
+      if (isAllThere && count === wordIdsArr.length) {
         const textRes = await db.query(
           `SELECT * FROM texts WHERE id = $1`, [text_id]
         )
@@ -58,12 +58,12 @@ export async function POST(
   const client = await db.connect()
 
   try {
-    const { data, err } = getDecodedToken()
+    const { data, err } = await getDecodedToken()
   
     if (err) return response({ err })
     
     const payload = await request.json()
-    const noteId = params.noteId
+    const noteId = (await params).noteId
     const text = payload.text
     const textId = uuidV4()
     const wordIds = payload.wordIds
@@ -96,7 +96,7 @@ export async function PUT(
   request: Request,
 ) {
   try {
-    const { data, err } = getDecodedToken()
+    const { data, err } = await getDecodedToken()
   
     if (err) return response({ err })
 

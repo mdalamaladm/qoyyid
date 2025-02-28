@@ -3,8 +3,8 @@ import type { NextRequest } from 'next/server'
 
 import { cookies } from 'next/headers'
  
-export function middleware(request: NextRequest) {
-  const token = cookies().get('token')
+export async function middleware(request: NextRequest) {
+  const token = (await cookies()).get('token')
   const pathname = request.nextUrl.pathname
 
   if (pathname.startsWith('/_next') || pathname.startsWith('/assets') || pathname.startsWith('/api') || pathname === '/favicon.ico') return NextResponse.next()
