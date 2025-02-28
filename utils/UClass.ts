@@ -23,7 +23,7 @@ export default class UClass {
     })
   }
   
-  static button ({ type, color, block, style, icon }: { type: string, color: string, block: boolean, style: string, icon: string }) {
+  static button ({ type, color, block, style, icon }: { type: string, color: string, block?: boolean, style?: string, icon: string }) {
     const types = {
       solid: '',
       outlined: 'border-2',
@@ -46,7 +46,7 @@ export default class UClass {
     return `group rounded-lg ${types[type]} ${colors[`${type}-${color}`] || ''} ${block && !icon ? 'w-full' : ''} ${style}`
   }
   
-  static iconButton (type, color) {
+  static iconButton (type: string, color: string) {
     const colors = {
       'solid-main': 'fill-qoyyid-accent group-active:fill-qoyyid-dark-accent group-disabled:fill-qoyyid-gray',
       'solid-secondary': 'fill-qoyyid-accent group-active:text-qoyyid-dark-accent group-disabled:fill-qoyyid-gray',

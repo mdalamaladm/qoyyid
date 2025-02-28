@@ -31,4 +31,5 @@ export type FormContextType = {
   setForm: (name: string, value: any) => void;
   getFormMessage: (name: string) => ({ value: any, message: string, error: boolean });
   getFormErrorAll: (error: FormError) => boolean;
+  getInput: (name: string) => ({ value: any, message: string, error: boolean });
 }

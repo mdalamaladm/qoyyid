@@ -1,9 +1,18 @@
 import Generator from './generator'
 import Parser from './parser'
 import Tokenizer from './tokenizer'
+import Token from './tokenizer/Token'
+
+type MarkdownGenerateParams = {
+  ast: Token[];
+  markdown: string;
+  render: () => void;
+}
 
 export default class Markdown {
-  static generate ({ ast, markdown, render }) {
+  static generate (
+    { ast, markdown, render }: Partial<MarkdownGenerateParams>
+  ) {
     let parsed = null
     
     if (ast) parsed = ast
@@ -18,7 +27,7 @@ export default class Markdown {
     return generated
   }
   
-  static parse (markdown) {
+  static parse (markdown: string) {
     const tokenized = this.tokenizer.tokenize(markdown)
 
     const parsed = this.parser.parse(tokenized)

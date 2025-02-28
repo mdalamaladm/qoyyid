@@ -2,6 +2,7 @@ export interface Snackbar {
   id: number;
   text: string;
   ms: number;
+  bg: string;
 }
 
 export type SnackbarMethod = (text: string, ms?: number) => void
