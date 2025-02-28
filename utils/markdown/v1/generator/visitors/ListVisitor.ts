@@ -1,10 +1,10 @@
 import SentenceVisitor from './SentenceVisitor'
 
 export default class ListVisitor {
-  static visit ({ listNode, render, parentType }) {
+  static visit ({ listNode, listIndex, render, parentType }) {
     const res = this.sentencesFor({ listNode, render, parentType })
   
-    return render?.list?.(res) || `
+    return render?.list?.(res, listIndex) || `
       <li>${res}</li>`
   }
   

@@ -4,7 +4,7 @@ export default class BoldVisitor {
   static visit ({ node, textIndex, render, parentType }) {
     const res = this.sentencesFor({ node: node.value, textIndex, render, parentType })
     
-    return render?.bold?.(res) || `<b>${res}</b>`
+    return render?.bold?.(res, textIndex) || `<b>${res}</b>`
   }
   
   private static sentencesFor ({ node, textIndex, render, parentType }) {

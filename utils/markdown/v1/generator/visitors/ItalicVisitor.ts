@@ -4,7 +4,7 @@ export default class ItalicVisitor {
   static visit ({ node, textIndex, render, parentType }) {
     const res = this.sentencesFor({ node: node.value, textIndex, render,parentType })
   
-    return render?.italic?.(res) || `<i>${res}</i>`
+    return render?.italic?.(res, textIndex) || `<i>${res}</i>`
   }
   
   private static sentencesFor ({ node, textIndex, render, parentType }) {
