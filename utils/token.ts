@@ -22,15 +22,15 @@ export const decode = (token: string) => {
   return { data: decode }
 }
 
-export const getDecodedToken = (verbose?: boolean) => {
-  const token = cookies().get('token')
+export const getDecodedToken = async (verbose?: boolean) => {
+  const token = (await cookies()).get('token')
     
   if (!token?.value) return { err: 'Please login again' }
   
   let { data, err }:  { data?: TokenVerbose | Token, err?: string } = decode(token.value)
   
   if (err) {
-    cookies().delete('token')
+    (await cookies()).delete('token')
     
     return { err }
   }
